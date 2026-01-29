@@ -1,0 +1,65 @@
+/* Contenedor que ocupa toda la pantalla */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f6f9;
+}
+
+/* Tarjeta */
+.login-container {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 36px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e1e5eb;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+/* Título */
+.login-container h1 {
+  text-align: center;
+  margin-bottom: 28px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+/* Textos */
+.login-container p {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Inputs */
+.login-container input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cfd6e0;
+  border-radius: 4px;
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: #1f4fb2;
+}
+
+/* Botón */
+.login-container button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 10px;
+  background-color: #1f4fb2;
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.login-container button:hover {
+  background-color: #183d8f;
+}

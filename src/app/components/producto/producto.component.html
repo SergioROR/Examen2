@@ -1,0 +1,31 @@
+<div class="productos-container">
+  <div class="productos-header">
+    <h1>Productos</h1>
+    <button class="btn-regresar" routerLink="/menu">Regresar</button>
+  </div>
+
+  <div class="form-group">
+    <label>Ingresa el nombre del producto:</label>
+    <input type="text" [(ngModel)]="nombre">
+  </div>
+
+  <div class="form-group">
+    <label>Ingresa la descripción del producto:</label>
+    <input type="text" [(ngModel)]="descripcion">
+  </div>
+
+  <div class="form-group">
+    <label>Ingresa el modelo del producto:</label>
+    <input type="text" [(ngModel)]="modelo">
+  </div>
+
+  <div class="form-group">
+    <label>Ingresa la cantidad del producto:</label>
+    <input type="text" [(ngModel)]="cantidad">
+  </div>
+
+  <div class="form-group">
+    <label>Ingresa el número de serie:</label>
+    <input type="text" [(ngModel)]="num_serie">
+  </div>
+</div>

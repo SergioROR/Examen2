@@ -1,0 +1,24 @@
+<div class="planteles-container">
+  <div class="planteles-header">
+    <h1>Planteles</h1>
+    <button class="btn-regresar" routerLink="/menu">Regresar</button>
+  </div>
+
+  <p>Ingresa el nombre del plantel</p>
+  <input type="text" [(ngModel)]="nombre">
+
+  <p>Ingresa el encargado del plantel</p>
+  <input type="text" [(ngModel)]="encargado">
+
+  <button (click)="addPlantel()">Agregar Plantel</button>
+
+  <h2>Nuevos planteles</h2>
+  <ul>
+    @for (p of planteles; track p) {
+      <li>
+        <span class="plantel-nombre">{{ p.nombre }}</span>
+        <span class="plantel-encargado">{{ p.encargado }}</span>
+      </li>
+    }
+  </ul>
+</div>
