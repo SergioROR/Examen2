@@ -1,65 +1,119 @@
-/* Contenedor que ocupa toda la pantalla */
-.login-wrapper {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f4f6f9;
+.container.pt-4 {
+  padding-top: 3.5rem !important;    /* ajusta este valor si quieres subirla/bajarla más */
+  padding-bottom: 5rem !important;
 }
 
-/* Tarjeta */
-.login-container {
-  width: 100%;
-  max-width: 380px;
-  padding: 32px 36px;
-  background-color: #ffffff;
-  border-radius: 6px;
-  border: 1px solid #e1e5eb;
-  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+.card.shadow-lg {
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 100%;                   /* evita que se salga en pantallas muy anchas */
+  margin: 0 auto;
 }
 
-/* Título */
-.login-container h1 {
-  text-align: center;
-  margin-bottom: 28px;
-  font-size: 22px;
+.table {
+  margin-bottom: 0;
+  width: 100% !important;
+}
+
+.table thead th {
   font-weight: 600;
-  color: #1f2a44;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.4px;
+  background-color: #212529 !important;
+  color: white;
+  border-bottom: none;
 }
 
-/* Textos */
-.login-container p {
-  margin: 12px 0 6px;
-  font-size: 14px;
+.table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.07) !important;
+}
+
+.table td {
+  vertical-align: middle;
+  padding: 1.1rem 1rem;
+}
+
+.table td:first-child {
   font-weight: 500;
 }
 
-/* Inputs */
-.login-container input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #cfd6e0;
-  border-radius: 4px;
+.table-custom {
+  max-width: 1100px;                /* reduce ancho para no pegarse a los bordes */
+  margin: 0 auto;                   /* centra la tabla */
 }
 
-.login-container input:focus {
-  outline: none;
-  border-color: #1f4fb2;
+.table thead th {
+  background-color: #0d9488 !important;  /* teal como en tu ejemplo de lockers */
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  border-bottom: none;
 }
 
-/* Botón */
-.login-container button {
-  width: 100%;
-  margin-top: 24px;
-  padding: 10px;
-  background-color: #1f4fb2;
+.table td {
+  vertical-align: middle;
+  padding: 1rem 1.25rem;
+}
+
+.btn-sm.rounded-circle {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.btn-sm.rounded-circle:hover {
+  transform: scale(1.1);
+}
+
+.badge.rounded-pill {
+  font-size: 0.95rem;
+  padding: 0.45rem 1rem;
+}
+
+.table-custom {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.table thead th {
+  background-color: #0d9488 !important;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.4px;
+}
+
+.nav-tabs .nav-link {
+  color: #495057;
   border: none;
-  border-radius: 4px;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
 }
 
-.login-container button:hover {
-  background-color: #183d8f;
+.nav-tabs .nav-link.active {
+  color: #0d6efd;
+  border-bottom: 3px solid #0d6efd;
+  background: transparent;
+}
+
+.btn.rounded-circle {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.btn.rounded-circle:hover {
+  transform: scale(1.1);
 }

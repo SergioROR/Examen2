@@ -1,31 +1,333 @@
-<div class="productos-container">
-  <div class="productos-header">
-    <h1>Productos</h1>
-    <button class="btn-regresar" routerLink="/menu">Regresar</button>
+<!-- ================================================
+     producto.component.html
+     ================================================ -->
+
+<!-- TOAST -->
+<div class="toast" [class.toast--visible]="successMsg">
+  <span>✓</span> {{ successMsg }}
+</div>
+
+<div class="page">
+
+  <!-- ENCABEZADO -->
+  <div class="page-header">
+    <div>
+      <p class="page-label">Sistema de Inventario · Universidad</p>
+      <h1 class="page-title">Gestión de Productos</h1>
+    </div>
+    <button class="btn btn-primary" (click)="abrirCrear()">+ Nuevo Producto</button>
   </div>
 
-  <div class="form-group">
-    <label>Ingresa el nombre del producto:</label>
-    <input type="text" [(ngModel)]="nombre">
+  <!-- ESTADÍSTICAS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-num">{{ productos.length }}</span>
+      <span class="stat-label">Total de productos</span>
+    </div>
+    <div class="stat-card stat-card--warn">
+      <span class="stat-num">{{ productos | stockFilter:1:5 }}</span>
+      <span class="stat-label">Stock bajo (1–5)</span>
+    </div>
+    <div class="stat-card stat-card--danger">
+      <span class="stat-num">{{ productos | stockFilter:0:0 }}</span>
+      <span class="stat-label">Sin existencias</span>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label>Ingresa la descripción del producto:</label>
-    <input type="text" [(ngModel)]="descripcion">
+  <!-- BÚSQUEDA -->
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Buscar por nombre, serie o modelo..."
+      [(ngModel)]="busqueda"
+      (ngModelChange)="filtrar()"
+    />
   </div>
 
-  <div class="form-group">
-    <label>Ingresa el modelo del producto:</label>
-    <input type="text" [(ngModel)]="modelo">
+  <!-- ERROR GLOBAL -->
+  <div class="alert alert-error" *ngIf="errorMsg && !modalMode">
+    ⚠ {{ errorMsg }}
+    <button class="alert-close" (click)="errorMsg = ''">✕</button>
   </div>
 
-  <div class="form-group">
-    <label>Ingresa la cantidad del producto:</label>
-    <input type="text" [(ngModel)]="cantidad">
+  <!-- LOADER -->
+  <div class="loader-wrap" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando inventario...</p>
   </div>
 
-  <div class="form-group">
-    <label>Ingresa el número de serie:</label>
-    <input type="text" [(ngModel)]="num_serie">
+  <!-- TABLA -->
+  <div class="table-wrap" *ngIf="!cargando">
+
+    <div class="empty-state" *ngIf="productosFiltrados.length === 0">
+      <p>📦 No se encontraron productos.</p>
+    </div>
+
+    <table class="tabla" *ngIf="productosFiltrados.length > 0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Modelo</th>
+          <th>N° Serie</th>
+          <th>Plantel</th>
+          <th>Departamento</th>
+          <th>Existencias</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of productosFiltrados; trackBy: trackById">
+          <td class="td-id">{{ p.id_productos }}</td>
+          <td>
+            <strong>{{ p.nombre }}</strong>
+            <small *ngIf="p.descripcion">{{ p.descripcion }}</small>
+          </td>
+          <td>{{ p.modelo || '—' }}</td>
+          <td class="td-mono">{{ p.num_serie }}</td>
+          <td>{{ p.plantel }}</td>
+          <td>{{ p.departamento }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStockClass(p.cantidad)">
+              {{ p.cantidad }}
+            </span>
+          </td>
+          <td>
+            <div class="acciones">
+              <button class="icon-btn icon-btn--blue"  title="Ajustar existencias" (click)="abrirCantidad(p)">±</button>
+              <button class="icon-btn icon-btn--green" title="Editar"              (click)="abrirEditar(p)">✎</button>
+              <button class="icon-btn icon-btn--red"   title="Eliminar"            (click)="abrirEliminar(p)">✕</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!-- ================================================
+     MODALES
+     ================================================ -->
+
+<div class="overlay" *ngIf="modalMode" (click)="cerrarModal()"></div>
+
+<!-- MODAL: CREAR -->
+<div class="modal" *ngIf="modalMode === 'crear'">
+  <div class="modal-header">
+    <h2>Nuevo Producto</h2>
+    <button class="modal-close" (click)="cerrarModal()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="modal-body">
+    <div class="form-grid">
+
+      <div class="field field-full">
+        <label>Nombre *</label>
+        <input type="text" placeholder="Ej. Laptop Dell XPS" [(ngModel)]="formCrear.nombre" />
+      </div>
+
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" placeholder="Ej. XPS-15-9500" [(ngModel)]="formCrear.modelo" />
+      </div>
+
+      <div class="field">
+        <label>N° Serie *</label>
+        <input type="text" placeholder="Ej. SN-00123" [(ngModel)]="formCrear.num_serie" />
+      </div>
+
+      <div class="field field-full">
+        <label>Descripción</label>
+        <textarea rows="2" placeholder="Descripción opcional..." [(ngModel)]="formCrear.descripcion"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Cantidad *</label>
+        <input type="number" min="1" [(ngModel)]="formCrear.cantidad" />
+      </div>
+
+      <!-- PLANTEL: solo lectura si el usuario ya tiene plantel asignado -->
+      <div class="field">
+        <label>Plantel *</label>
+        <select
+          [(ngModel)]="formCrear.id_plantel"
+          (ngModelChange)="cargarDepartamentos($event)"
+          [disabled]="plantelUsuario > 0"
+        >
+          <option [ngValue]="0" disabled>— Selecciona un plantel —</option>
+          <option *ngFor="let pl of planteles" [ngValue]="pl.id_plantel">
+            {{ pl.nombre }}
+          </option>
+        </select>
+        <small *ngIf="plantelUsuario > 0" class="field-hint">
+          Asignado automáticamente a tu plantel
+        </small>
+      </div>
+
+      <!-- DEPARTAMENTO: se habilita al seleccionar plantel -->
+      <div class="field">
+        <label>Departamento *</label>
+        <select
+          [(ngModel)]="formCrear.id_departamento"
+          [disabled]="departamentos.length === 0"
+        >
+          <option [ngValue]="0" disabled>
+            {{ departamentos.length === 0 ? '— Primero selecciona un plantel —' : '— Selecciona un departamento —' }}
+          </option>
+          <option *ngFor="let d of departamentos" [ngValue]="d.id_departamento">
+            {{ d.nombre }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn btn-primary" (click)="guardarCrear()" [disabled]="modalCargando">
+      {{ modalCargando ? 'Guardando...' : 'Guardar Producto' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR -->
+<div class="modal" *ngIf="modalMode === 'editar'">
+  <div class="modal-header">
+    <h2>Editar: {{ productoSeleccionado?.nombre }}</h2>
+    <button class="modal-close" (click)="cerrarModal()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="modal-body">
+    <div class="form-grid">
+
+      <div class="field field-full">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="formEditar.nombre" />
+      </div>
+
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" [(ngModel)]="formEditar.modelo" />
+      </div>
+
+      <div class="field">
+        <label>N° Serie</label>
+        <input type="text" [(ngModel)]="formEditar.num_serie" />
+      </div>
+
+      <div class="field field-full">
+        <label>Descripción</label>
+        <textarea rows="2" [(ngModel)]="formEditar.descripcion"></textarea>
+      </div>
+
+      <!-- PLANTEL: bloqueado si el usuario tiene plantel fijo -->
+      <div class="field">
+        <label>Plantel</label>
+        <select
+          [(ngModel)]="formEditar.id_plantel"
+          (ngModelChange)="cargarDepartamentos($event)"
+          [disabled]="plantelUsuario > 0"
+        >
+          <option [ngValue]="0" disabled>— Selecciona un plantel —</option>
+          <option *ngFor="let pl of planteles" [ngValue]="pl.id_plantel">
+            {{ pl.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- DEPARTAMENTO -->
+      <div class="field">
+        <label>Departamento</label>
+        <select
+          [(ngModel)]="formEditar.id_departamento"
+          [disabled]="departamentos.length === 0"
+        >
+          <option [ngValue]="0" disabled>— Selecciona un departamento —</option>
+          <option *ngFor="let d of departamentos" [ngValue]="d.id_departamento">
+            {{ d.nombre }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn btn-primary" (click)="guardarEditar()" [disabled]="modalCargando">
+      {{ modalCargando ? 'Guardando...' : 'Guardar Cambios' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: CANTIDAD -->
+<div class="modal modal-sm" *ngIf="modalMode === 'cantidad'">
+  <div class="modal-header">
+    <h2>Ajustar Existencias</h2>
+    <button class="modal-close" (click)="cerrarModal()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="modal-body">
+    <p class="stock-info">
+      Producto: <strong>{{ productoSeleccionado?.nombre }}</strong><br/>
+      Stock actual:
+      <span class="badge" [ngClass]="getStockClass(productoSeleccionado?.cantidad ?? 0)">
+        {{ productoSeleccionado?.cantidad }}
+      </span>
+    </p>
+
+    <div class="toggle-group">
+      <button [class.active]="formCantidad.operacion === 'agregar'"
+              (click)="formCantidad.operacion = 'agregar'">+ Agregar</button>
+      <button [class.active]="formCantidad.operacion === 'restar'"
+              (click)="formCantidad.operacion = 'restar'">− Restar</button>
+    </div>
+
+    <div class="field">
+      <label>Cantidad a {{ formCantidad.operacion }}</label>
+      <input type="number" min="1" [(ngModel)]="formCantidad.cantidad" />
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn btn-primary" (click)="guardarCantidad()" [disabled]="modalCargando">
+      {{ modalCargando ? 'Procesando...' : 'Confirmar' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: ELIMINAR -->
+<div class="modal modal-sm" *ngIf="modalMode === 'eliminar'">
+  <div class="modal-header modal-header--danger">
+    <h2>Eliminar Producto</h2>
+    <button class="modal-close" (click)="cerrarModal()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="modal-body">
+    <div class="confirm-box">
+      <p>¿Estás seguro de que deseas eliminar</p>
+      <p><strong>{{ productoSeleccionado?.nombre }}</strong>?</p>
+      <p class="confirm-sub">Esta acción no se puede deshacer.</p>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn btn-danger" (click)="confirmarEliminar()" [disabled]="modalCargando">
+      {{ modalCargando ? 'Eliminando...' : 'Sí, eliminar' }}
+    </button>
   </div>
 </div>

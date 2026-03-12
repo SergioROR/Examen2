@@ -1,24 +1,49 @@
-<div class="planteles-container">
-  <div class="planteles-header">
-    <h1>Planteles</h1>
-    <button class="btn-regresar" routerLink="/menu">Regresar</button>
+<!-- Barra superior con buscador y botón -->
+<div class="top-bar">
+  <div class="input-group input-group-lg" style="max-width: 500px;">
+    <span class="input-group-text bg-white border-end-0">
+      <i class="bi bi-search text-muted"></i>
+    </span>
+    <input 
+      type="text" 
+      class="form-control border-start-0 rounded-end" 
+      placeholder="Buscar por nombre del plantel" 
+      [(ngModel)]="terminoBusqueda" 
+      (ngModelChange)="filtrarPlanteles()"
+    >
   </div>
 
-  <p>Ingresa el nombre del plantel</p>
-  <input type="text" [(ngModel)]="nombre">
+  <button class="btn-glass" type="button" [routerLink]="['/crearPlantel']">
+    <span class="btn-content">
+      <i class="plus-icon">+</i>
+      Crear Plantel
+    </span>
+  </button>
+</div>
 
-  <p>Ingresa el encargado del plantel</p>
-  <input type="text" [(ngModel)]="encargado">
+<!-- Contenedor de tarjetas -->
+<div class="planteles-container">
+  <!-- Mensaje si no hay resultados -->
+  <div *ngIf="listaPlantelesFiltrada.length === 0" class="text-center py-5 text-muted">
+    <h4>No se encontraron planteles</h4>
+    <p>Intenta con otro término de búsqueda o crea uno nuevo.</p>
+  </div>
 
-  <button (click)="addPlantel()">Agregar Plantel</button>
+  <!-- Tarjetas filtradas -->
+  <div class="plantel-card" *ngFor="let plantel of listaPlantelesFiltrada">
+    <div class="card-image">
+      <img 
+        [src]="plantel.imagen ? (URL_API + plantel.imagen) : 'assets/no-image.png'" 
+        alt="{{ plantel.nombre }}"
+        style="display: block; width: 100%; height: 100%; object-fit: cover;"
+      >
+    </div>
 
-  <h2>Nuevos planteles</h2>
-  <ul>
-    @for (p of planteles; track p) {
-      <li>
-        <span class="plantel-nombre">{{ p.nombre }}</span>
-        <span class="plantel-encargado">{{ p.encargado }}</span>
-      </li>
-    }
-  </ul>
+    <div class="card-info" style="padding: 15px; background: #222;">
+      <h3 style="color: #0ef !important; margin: 0; display: block;">
+        {{ plantel.nombre | uppercase }}
+      </h3>
+      <small style="color: #ccc;">Plantel disponible</small>
+    </div>
+  </div>
 </div>

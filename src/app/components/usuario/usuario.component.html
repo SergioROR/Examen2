@@ -1,13 +1,177 @@
-<div class="login-wrapper">
-  <div class="login-container">
-    <h1>Iniciar sesión</h1>
+<div class="container pt-4 pb-5">
+  <div class="row justify-content-center">
+    <div class="col-xl-11 col-lg-11 col-md-12 col-12">
 
-    <p>Usuario</p>
-    <input type="text" [(ngModel)]="usuario">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+        <div class="input-group input-group-lg" style="max-width: 500px;">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="bi bi-search text-muted"></i>
+          </span>
+          <input 
+            type="text" 
+            class="form-control border-start-0 rounded-end" 
+            placeholder="Buscar por nombre, apellidos o correo" 
+            [(ngModel)]="terminoBusqueda" 
+            (ngModelChange)="filtrarUsuarios()"
+          >
+        </div>
 
-    <p>Contraseña</p>
-    <input type="password" [(ngModel)]="contra">
+        <button 
+          class="btn btn-primary btn-lg rounded-pill px-4 fw-semibold shadow-sm" 
+          [routerLink]="['/crearUsuarios']">
+          <i class="bi bi-person-plus me-2"></i> Crear Usuario
+        </button>
+      </div>
 
-    <button routerLink="/menu">Ingresar</button>
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+
+          <ul class="nav nav-tabs nav-fill border-bottom-0 bg-light" id="userTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-semibold py-3" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
+                Usuarios Activos
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold py-3" id="inactivos-tab" data-bs-toggle="tab" data-bs-target="#inactivos" type="button" role="tab" aria-controls="inactivos" aria-selected="false">
+                Usuarios Inactivos
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content p-4 p-md-5">
+
+            <div class="tab-pane fade show active" id="activos" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-custom">
+                  <thead>
+                    <tr>
+                      <th class="ps-4 py-3">Nombre</th>
+                      <th class="py-3">Apellidos</th>
+                      <th class="py-3">Correo</th>
+                      <th class="py-3">Plantel</th>
+                      <th class="py-3">Rol</th>
+                      <th class="py-3 text-center">Contraseña</th>
+                      <th class="py-3 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let usuario of listaActivosFiltrada">
+                      <td class="ps-4 fw-medium">{{ usuario.nombre }}</td>
+                      <td>{{ usuario.apellidos }}</td>
+                      <td>{{ usuario.correo }}</td>
+                      <td>{{ usuario.plantel || '—' }}</td>
+                      <td>
+                        <span class="badge rounded-pill px-3 py-2 fs-6" [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
+                          {{ usuario.rol }}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-warning rounded-circle shadow-sm" title="Cambiar contraseña" (click)="abrirModalCambiarContrasena(usuario, cambiarContrasenaModal)">
+                          <i class="bi bi-key-fill"></i>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-danger rounded-circle shadow-sm" title="Inhabilitar" (click)="confirmarInhabilitar(usuario, modalConfirmacion)">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="listaActivosFiltrada.length === 0">
+                      <td colspan="7" class="text-center py-5 text-muted fst-italic">
+                        No se encontraron usuarios activos.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="inactivos" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-custom">
+                  <thead>
+                    <tr>
+                      <th class="ps-4 py-3">Nombre</th>
+                      <th class="py-3">Apellidos</th>
+                      <th class="py-3">Correo</th>
+                      <th class="py-3">Plantel</th>
+                      <th class="py-3">Rol</th>
+                      <th class="py-3 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let usuario of listaInactivosFiltrada">
+                      <td class="ps-4 fw-medium">{{ usuario.nombre }}</td>
+                      <td>{{ usuario.apellidos }}</td>
+                      <td>{{ usuario.correo }}</td>
+                      <td>{{ usuario.plantel || '—' }}</td>
+                      <td>
+                        <span class="badge rounded-pill px-3 py-2 fs-6" [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
+                          {{ usuario.rol }}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-success rounded-circle shadow-sm" title="Habilitar" (click)="confirmarHabilitar(usuario, modalConfirmacion)">
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="listaInactivosFiltrada.length === 0">
+                      <td colspan="6" class="text-center py-5 text-muted fst-italic">
+                        No se encontraron usuarios inactivos.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
+
+<ng-template #cambiarContrasenaModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Cambiar contraseña</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <form #formContrasena="ngForm">
+      <div class="mb-3">
+        <label class="form-label fw-medium">Nueva contraseña</label>
+        <input type="password" class="form-control" [(ngModel)]="nuevaContrasena" name="nuevaContrasena" required minlength="8">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Confirmar contraseña</label>
+        <input type="password" class="form-control" [(ngModel)]="confirmarContrasena" name="confirmarContrasena" required>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="confirmarCambioContrasena(); modal.close()" [disabled]="formContrasena.invalid || nuevaContrasena !== confirmarContrasena">
+      Aceptar
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #modalConfirmacion let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Confirmar acción</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    {{ mensajeConfirmacion }}
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button type="button" class="btn btn-danger" (click)="accionConfirmada(); modal.close()">
+      Sí, confirmar
+    </button>
+  </div>
+</ng-template>

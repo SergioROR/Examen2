@@ -1,1 +1,172 @@
-<p>registro works!</p>
+<!-- registros.component.html -->
+
+<!-- TOAST overlay -->
+<div class="overlay" *ngIf="modalDetalle" (click)="cerrarDetalle()"></div>
+
+<div class="page">
+
+  <!-- ENCABEZADO -->
+  <div class="page-header">
+    <div>
+      <p class="page-label">Sistema de Inventario · Universidad</p>
+      <h1 class="page-title">Historial de Registros</h1>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-bar">
+    <div class="filtro-grupo">
+      <label>Tipo</label>
+      <select [(ngModel)]="filtroTipo" (ngModelChange)="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option value="entrada">Entradas</option>
+        <option value="salida">Salidas</option>
+      </select>
+    </div>
+
+    <div class="filtro-grupo">
+      <label>Fecha</label>
+      <input type="date" [(ngModel)]="filtroFecha" (ngModelChange)="aplicarFiltros()" />
+    </div>
+
+    <button class="btn btn-ghost" (click)="limpiarFiltros()">✕ Limpiar filtros</button>
+
+    <span class="filtro-contador">
+      {{ filtrados.length }} registro{{ filtrados.length !== 1 ? 's' : '' }} encontrado{{ filtrados.length !== 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  <!-- ERROR -->
+  <div class="alert alert-error" *ngIf="errorMsg">
+    ⚠ {{ errorMsg }}
+    <button class="alert-close" (click)="errorMsg = ''">✕</button>
+  </div>
+
+  <!-- LOADER -->
+  <div class="loader-wrap" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando registros...</p>
+  </div>
+
+  <ng-container *ngIf="!cargando">
+
+    <!-- PESTAÑAS DE PÁGINAS -->
+    <div class="pestanas" *ngIf="totalPaginas > 1">
+      <button
+        *ngFor="let p of pestanas"
+        class="pestana-btn"
+        [class.pestana-btn--active]="p === paginaActual"
+        (click)="irAPagina(p)"
+      >
+        Página {{ p }}
+      </button>
+    </div>
+
+    <!-- VACÍO -->
+    <div class="empty-state" *ngIf="filtrados.length === 0">
+      <p>📋 No se encontraron registros.</p>
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-wrap" *ngIf="filtrados.length > 0">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Departamento</th>
+            <th>Productos</th>
+            <th>Nota</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of registrosPagina">
+            <td class="td-id">{{ r.id_registro }}</td>
+            <td>
+              <span class="badge" [ngClass]="getBadgeClass(r.tipo)">
+                {{ getTipoLabel(r.tipo) }}
+              </span>
+            </td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.usuario }}</td>
+            <td>{{ r.departamento }}</td>
+            <td class="td-center">{{ r.total_productos }}</td>
+            <td class="td-nota">{{ r.nota || '—' }}</td>
+            <td>
+              <button class="icon-btn icon-btn--blue" title="Ver detalle" (click)="verDetalle(r)">
+                👁
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación inferior -->
+      <div class="paginacion-info">
+        Mostrando registros {{ (paginaActual - 1) * 20 + 1 }}–{{ paginaActual * 20 > filtrados.length ? filtrados.length : paginaActual * 20 }}
+        de {{ filtrados.length }}
+      </div>
+    </div>
+
+  </ng-container>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal" *ngIf="modalDetalle">
+  <div class="modal-header">
+    <h2>
+      Detalle del Registro #{{ registroSeleccionado?.id_registro }}
+      <span class="badge" [ngClass]="getBadgeClass(registroSeleccionado?.tipo || '')">
+        {{ getTipoLabel(registroSeleccionado?.tipo || '') }}
+      </span>
+    </h2>
+    <button class="modal-close" (click)="cerrarDetalle()">✕</button>
+  </div>
+
+  <div class="modal-meta" *ngIf="registroSeleccionado">
+    <span>📅 {{ registroSeleccionado.fecha }}</span>
+    <span>👤 {{ registroSeleccionado.usuario }}</span>
+    <span>🏛 {{ registroSeleccionado.departamento }}</span>
+    <span *ngIf="registroSeleccionado.nota">📝 {{ registroSeleccionado.nota }}</span>
+  </div>
+
+  <div class="modal-body">
+    <div class="loader-wrap" *ngIf="cargandoDetalle">
+      <div class="spinner"></div>
+      <p>Cargando productos...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargandoDetalle && detalle.length === 0">
+      <p>Sin productos registrados.</p>
+    </div>
+
+    <table class="tabla" *ngIf="!cargandoDetalle && detalle.length > 0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Modelo</th>
+          <th>N° Serie</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of detalle">
+          <td>
+            <strong>{{ d.producto }}</strong>
+            <small *ngIf="d.descripcion">{{ d.descripcion }}</small>
+          </td>
+          <td>{{ d.modelo || '—' }}</td>
+          <td class="td-mono">{{ d.num_serie }}</td>
+          <td class="td-center">{{ d.cantidad }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+  </div>
+</div>

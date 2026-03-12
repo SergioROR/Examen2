@@ -1,7 +1,32 @@
-<h1 class="menu-title">Menú principal</h1>
+<nav class="navbar">
+  <div class="nav-logo">
+    <span class="system-name">Sistema de invenvario</span>
+  </div>
 
-<nav class="menu-bar">
-  <button class="btn-planteles" routerLink="/planteles">Planteles</button>
-  <button class="btn-productos" routerLink="/productos">Productos</button>
-  <button class="btn-pedidos">Pedidos</button>
+  <div class="nav-menu">
+    <a [routerLink]="['/general']"   (click)="setIndex(0)">General</a>
+    <a [routerLink]="['/planteles']" (click)="setIndex(1)">Planteles</a>
+    <a [routerLink]="['/pedidos']"   (click)="setIndex(2)">Pedidos</a>
+    <a [routerLink]="['/productos']"  (click)="setIndex(3)">Inventario</a>
+    <a [routerLink]="['/registros']"   (click)="setIndex(4)">Registros</a>
+    <a [routerLink]="['/usuarios']"  (click)="setIndex(5)">Usuarios</a>
+
+    <!-- 
+      100 / 6 = 16.666666... 
+      Puedes usar 16.6667 o calc(100% / 6)
+    -->
+    <span class="indicator" 
+          [style.left.%]="indexActivo * (100 / 6)">
+    </span>
+  </div>
+
+  <div class="nav-user">
+    <div class="user-info">
+      <span class="user-name">{{nombre}}</span>
+      <span class="user-role">{{rol}}</span>
+    </div>
+    <div class="user-avatar">
+      <img src="assets/user-icon.png" alt="User">
+    </div>
+  </div>
 </nav>

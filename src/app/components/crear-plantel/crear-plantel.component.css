@@ -1,0 +1,193 @@
+/* fondo de la página */
+
+.page-container{
+  min-height:100vh;
+  display:flex;
+  justify-content:center; /* centro horizontal */
+  align-items:flex-start; /* arriba */
+  background:#f5f7fb;
+  padding-top:60px; /* separación desde arriba */
+  padding-left:40px;
+  padding-right:40px;
+}
+
+
+/* tarjeta */
+
+.form-card{
+  width:65%;
+  min-width:800px;
+  border:none;
+  border-radius:16px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.08);
+  background:white;
+}
+
+
+/* header */
+
+.card-header{
+  padding:22px 30px;
+  border-bottom:1px solid #eee;
+  background:white;
+}
+
+.card-header h4{
+  margin:0;
+  font-weight:600;
+}
+
+
+/* layout interno */
+
+.form-layout{
+  display:flex;
+  gap:40px;
+  padding:30px;
+}
+
+
+/* sección imagen */
+
+.image-section{
+  width:300px;
+}
+
+
+/* cuadro imagen */
+
+.upload-box{
+  width:100%;
+  height:260px;
+  border:2px dashed #d8dee9;
+  border-radius:12px;
+  background:#fafbff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  overflow:hidden;
+  transition:.25s;
+}
+
+.upload-box:hover{
+  border-color:#00aaff;
+  background:#f0f7ff;
+}
+
+
+/* placeholder */
+
+.upload-placeholder{
+  text-align:center;
+  color:#7a869a;
+}
+
+.upload-placeholder i{
+  font-size:42px;
+  margin-bottom:10px;
+}
+
+
+/* imagen preview */
+
+.preview-img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+
+/* sección formulario */
+
+.fields-section{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.fields-section label{
+  font-weight:500;
+  margin-bottom:8px;
+  color:#333;
+}
+
+
+/* input moderno */
+
+.input-modern{
+  border-radius:10px;
+  border:1px solid #dfe3eb;
+  padding:12px;
+  transition:.2s;
+}
+
+.input-modern:focus{
+  border-color:#00aaff;
+  box-shadow:0 0 0 3px rgba(0,170,255,0.15);
+}
+
+
+/* botones contenedor */
+
+.buttons{
+  display:flex;
+  justify-content:flex-end;
+  gap:15px;
+  padding:20px 30px 30px;
+}
+
+
+/* BOTÓN CREAR */
+
+.btn-glass{
+  background:linear-gradient(135deg,#0072ff 0%,#00c6ff 100%);
+  color:white;
+  border:none;
+  padding:12px 28px;
+  border-radius:50px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 4px 15px rgba(0,114,255,0.3);
+  transition:.3s;
+}
+
+.btn-glass:hover{
+  box-shadow:0 6px 20px rgba(0,198,255,0.5);
+  transform:translateY(-2px);
+  filter:brightness(1.1);
+}
+
+.btn-glass:active{
+  transform:translateY(1px);
+}
+
+
+/* BOTÓN REGRESAR */
+
+.btn-glass-secondary{
+  background:linear-gradient(135deg,#eef1f5 0%,#d6dbe3 100%);
+  color:#374151;
+  border:none;
+  padding:12px 28px;
+  border-radius:50px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  transition:.3s;
+}
+
+.btn-glass-secondary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+
+.btn-glass-secondary:active{
+  transform:translateY(1px);
+}
