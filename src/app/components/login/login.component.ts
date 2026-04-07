@@ -35,8 +35,8 @@ export class LoginComponent {
     this.usuarioService.login(this.usuario, this.contra).subscribe({
       next: (resp) => {
         if (resp.verificacion) {
-          localStorage.setItem('datos_usuario', JSON.stringify(resp.usuario));
-          this.usuarioService.mostrarMenu = true;
+          sessionStorage.setItem('datos_usuario', JSON.stringify(resp.usuario));
+          this.usuarioService.mostrarMenu = true; 
           this.router.navigate(['/general']);
         }
       },

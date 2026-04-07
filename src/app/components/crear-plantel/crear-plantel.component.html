@@ -1,91 +1,115 @@
-<div class="page-container">
+<div class="cp-page">
+  <div class="cp-card">
 
-  <div class="card form-card">
+    <!-- Panel izquierdo -->
+    <div class="cp-left">
+      <div class="cp-left-bg"></div>
+      <div class="cp-left-content">
 
-    <div class="card-header">
-      <h4>Crear Plantel</h4>
-    </div>
-
-    <div class="card-body">
-
-      <form (ngSubmit)="onSubmit()" #formPlantel="ngForm">
-
-        <div class="form-layout">
-
-          
-          <div class="image-section">
-
-            <div class="upload-box" (click)="fileInput.click()">
-
-              <input
-                #fileInput
-                type="file"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                hidden
-              >
-
-           
-              <div *ngIf="!previewUrl" class="upload-placeholder">
-                <i class="bi bi-image"></i>
-                <p>Subir imagen</p>
-                <small>JPG o PNG</small>
-              </div>
-
-             
-              <img
-                *ngIf="previewUrl"
-                [src]="previewUrl"
-                class="preview-img"
-              >
-
-            </div>
-
-          </div>
-
-          <div class="fields-section">
-
-            <label>Nombre del plantel</label>
-
-            <input
-              type="text"
-              class="form-control input-modern"
-              [(ngModel)]="plantel.nombre"
-              name="nombre"
-              placeholder="Ej. Campus Central"
-              required
-            >
-
-          </div>
-
+        <div class="cp-brand">
+          <span class="cp-brand-icon">🏫</span>
+          <span class="cp-brand-text">Sistema de Inventario</span>
         </div>
 
-        <div class="buttons">
+        <!-- Upload zona -->
+        <div class="cp-upload-section">
+          <div class="cp-upload-ring">
+            <div class="cp-upload-preview" (click)="fileInput.click()">
+              <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" hidden>
 
-          <button
-            type="button"
-            class="btn-glass-secondary"
-            routerLink="/planteles"
-          >
-            <i class="bi bi-arrow-left"></i>
-            Regresar
+              <img *ngIf="previewUrl" [src]="previewUrl" class="cp-preview-img" alt="preview">
+
+              <div *ngIf="!previewUrl" class="cp-upload-placeholder">
+                <span class="cp-upload-icon">🖼</span>
+                <p class="cp-upload-hint">Subir imagen</p>
+                <small>JPG o PNG</small>
+              </div>
+            </div>
+          </div>
+
+          <button *ngIf="previewUrl" class="cp-remove-img" (click)="quitarImagen()">
+            ✕ Quitar imagen
           </button>
 
-          <button
-            type="submit"
-            class="btn-glass"
-            [disabled]="formPlantel.invalid || enviando"
-          >
-            <i class="bi bi-check-lg"></i>
-            Crear Plantel
+          <button *ngIf="!previewUrl" class="cp-upload-btn" (click)="fileInput.click()">
+            📁 Seleccionar imagen
           </button>
 
+          <p class="cp-upload-note">
+            Imagen representativa del plantel.<br>Formato JPG o PNG.
+          </p>
+        </div>
+
+        <div class="cp-left-footer">
+          <div class="cp-decoration-line"></div>
+          <p class="cp-left-caption">
+            Al crear el plantel se generará automáticamente el departamento
+            <strong>Control de Equipos y Soporte</strong>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Panel derecho -->
+    <div class="cp-right">
+
+      <div class="cp-form-header">
+        <h1 class="cp-form-title">Nuevo Plantel</h1>
+        <p class="cp-form-subtitle">Completa la información para registrar el plantel</p>
+      </div>
+
+      <!-- Alerts -->
+      <div class="cp-alert cp-alert--success" *ngIf="mensajeExito">
+        ✓ {{ mensajeExito }}
+      </div>
+      <div class="cp-alert cp-alert--error" *ngIf="mensajeError">
+        ⚠ {{ mensajeError }}
+        <button (click)="mensajeError = null">✕</button>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" class="cp-form">
+
+        <!-- Nombre -->
+        <div class="cp-field">
+          <label class="cp-label">
+            <span class="cp-label-dot"></span>
+            Nombre del plantel *
+          </label>
+          <div class="cp-input-wrap">
+            <input type="text" class="cp-input" [(ngModel)]="nombre" name="nombre" placeholder="Ej. Campus Justo Sierra"
+              [disabled]="enviando" />
+            <span class="cp-input-icon">🏫</span>
+          </div>
+        </div>
+
+        <!-- Info departamentos -->
+        <div class="cp-info-box">
+          <div class="cp-info-icon">ℹ</div>
+          <div>
+            <p class="cp-info-title">Departamento que se creará</p>
+            <div class="cp-dept-chips">
+              <span class="cp-chip">📦 Control de Equipos y Soporte</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="cp-actions">
+          <button type="button" class="cp-btn cp-btn-ghost" routerLink="/planteles" [disabled]="enviando">
+            ← Regresar
+          </button>
+          <button type="submit" class="cp-btn cp-btn-primary"
+            [disabled]="enviando || !nombre.trim() || !archivoSeleccionado">
+            <span *ngIf="!enviando">✓ Crear Plantel</span>
+            <span *ngIf="enviando" class="cp-spinner-wrap">
+              <span class="cp-spinner"></span> Creando...
+            </span>
+          </button>
         </div>
 
       </form>
 
     </div>
-
   </div>
-
 </div>

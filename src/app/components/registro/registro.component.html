@@ -1,11 +1,9 @@
 <!-- registros.component.html -->
 
-<!-- TOAST overlay -->
 <div class="overlay" *ngIf="modalDetalle" (click)="cerrarDetalle()"></div>
 
 <div class="page">
 
-  <!-- ENCABEZADO -->
   <div class="page-header">
     <div>
       <p class="page-label">Sistema de Inventario · Universidad</p>
@@ -23,17 +21,12 @@
         <option value="salida">Salidas</option>
       </select>
     </div>
-
     <div class="filtro-grupo">
       <label>Fecha</label>
       <input type="date" [(ngModel)]="filtroFecha" (ngModelChange)="aplicarFiltros()" />
     </div>
-
-    <button class="btn btn-ghost" (click)="limpiarFiltros()">✕ Limpiar filtros</button>
-
-    <span class="filtro-contador">
-      {{ filtrados.length }} registro{{ filtrados.length !== 1 ? 's' : '' }} encontrado{{ filtrados.length !== 1 ? 's' : '' }}
-    </span>
+    <button class="btn btn-ghost" (click)="limpiarFiltros()">✕ Limpiar</button>
+    <span class="filtro-contador">{{ filtrados.length }} registro{{ filtrados.length !== 1 ? 's' : '' }}</span>
   </div>
 
   <!-- ERROR -->
@@ -50,51 +43,44 @@
 
   <ng-container *ngIf="!cargando">
 
-    <!-- PESTAÑAS DE PÁGINAS -->
     <div class="pestanas" *ngIf="totalPaginas > 1">
-      <button
-        *ngFor="let p of pestanas"
-        class="pestana-btn"
-        [class.pestana-btn--active]="p === paginaActual"
-        (click)="irAPagina(p)"
-      >
+      <button *ngFor="let p of pestanas" class="pestana-btn" [class.pestana-btn--active]="p === paginaActual"
+        (click)="irAPagina(p)">
         Página {{ p }}
       </button>
     </div>
 
-    <!-- VACÍO -->
     <div class="empty-state" *ngIf="filtrados.length === 0">
       <p>📋 No se encontraron registros.</p>
     </div>
 
-    <!-- TABLA -->
     <div class="table-wrap" *ngIf="filtrados.length > 0">
       <table class="tabla">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Tipo</th>
             <th>Fecha</th>
-            <th>Usuario</th>
+            <th>Tipo</th>
+            <th>Plantel</th>
             <th>Departamento</th>
+            <th>Usuarios</th>
+            <th>Movimientos</th>
             <th>Productos</th>
-            <th>Nota</th>
             <th>Detalle</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let r of registrosPagina">
-            <td class="td-id">{{ r.id_registro }}</td>
+            <td>{{ r.fecha }}</td>
             <td>
               <span class="badge" [ngClass]="getBadgeClass(r.tipo)">
                 {{ getTipoLabel(r.tipo) }}
               </span>
             </td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.usuario }}</td>
+            <td>{{ r.plantel }}</td>
             <td>{{ r.departamento }}</td>
+            <td>{{ r.usuario }}</td>
+            <td class="td-center">{{ r.total_movimientos }}</td>
             <td class="td-center">{{ r.total_productos }}</td>
-            <td class="td-nota">{{ r.nota || '—' }}</td>
             <td>
               <button class="icon-btn icon-btn--blue" title="Ver detalle" (click)="verDetalle(r)">
                 👁
@@ -104,9 +90,9 @@
         </tbody>
       </table>
 
-      <!-- Paginación inferior -->
       <div class="paginacion-info">
-        Mostrando registros {{ (paginaActual - 1) * 20 + 1 }}–{{ paginaActual * 20 > filtrados.length ? filtrados.length : paginaActual * 20 }}
+        Mostrando {{ (paginaActual - 1) * 20 + 1 }}–{{ paginaActual * 20 > filtrados.length ? filtrados.length :
+        paginaActual * 20 }}
         de {{ filtrados.length }}
       </div>
     </div>
@@ -116,54 +102,96 @@
 
 <!-- MODAL DETALLE -->
 <div class="modal" *ngIf="modalDetalle">
-  <div class="modal-header">
-    <h2>
-      Detalle del Registro #{{ registroSeleccionado?.id_registro }}
-      <span class="badge" [ngClass]="getBadgeClass(registroSeleccionado?.tipo || '')">
-        {{ getTipoLabel(registroSeleccionado?.tipo || '') }}
-      </span>
-    </h2>
+
+  <div class="modal-header"
+    [ngClass]="registroSeleccionado?.tipo === 'entrada' ? 'modal-header--entrada' : 'modal-header--salida'">
+    <div>
+      <h2>{{ registroSeleccionado?.fecha }}</h2>
+      <p style="font-size:12px; opacity:.75; margin-top:3px;">
+        {{ registroSeleccionado?.tipo === 'entrada' ? '↑ Registro de Entrada' : '↓ Registro de Salida' }}
+      </p>
+    </div>
     <button class="modal-close" (click)="cerrarDetalle()">✕</button>
   </div>
 
-  <div class="modal-meta" *ngIf="registroSeleccionado">
-    <span>📅 {{ registroSeleccionado.fecha }}</span>
-    <span>👤 {{ registroSeleccionado.usuario }}</span>
-    <span>🏛 {{ registroSeleccionado.departamento }}</span>
-    <span *ngIf="registroSeleccionado.nota">📝 {{ registroSeleccionado.nota }}</span>
+  <!-- Banner: muestra origen → destino -->
+  <div class="detalle-banner"
+    [ngClass]="registroSeleccionado?.tipo === 'entrada' ? 'detalle-banner--entrada' : 'detalle-banner--salida'">
+    <div class="detalle-banner__icono">
+      {{ registroSeleccionado?.tipo === 'entrada' ? '↑' : '↓' }}
+    </div>
+    <div class="detalle-banner__info">
+
+      <!-- SALIDA: mostrar origen → destino -->
+      <ng-container *ngIf="registroSeleccionado?.tipo === 'salida'">
+        <span class="detalle-banner__etiqueta">Salida enviada a</span>
+        <span class="detalle-banner__plantel">🏫 {{ registroSeleccionado?.plantel_origen }}</span>
+        <span class="detalle-banner__dept">📂 {{ registroSeleccionado?.departamento }}</span>
+        <span class="detalle-banner__origen">
+          Desde: {{ registroSeleccionado?.plantel }}
+        </span>
+      </ng-container>
+
+      <!-- ENTRADA: solo plantel propio -->
+      <ng-container *ngIf="registroSeleccionado?.tipo === 'entrada'">
+        <span class="detalle-banner__etiqueta">Entrada registrada en</span>
+        <span class="detalle-banner__plantel">🏫 {{ registroSeleccionado?.plantel }}</span>
+        <span class="detalle-banner__dept">📂 {{ registroSeleccionado?.departamento }}</span>
+      </ng-container>
+
+    </div>
   </div>
 
   <div class="modal-body">
+
     <div class="loader-wrap" *ngIf="cargandoDetalle">
       <div class="spinner"></div>
-      <p>Cargando productos...</p>
+      <p>Cargando movimientos...</p>
     </div>
 
     <div class="empty-state" *ngIf="!cargandoDetalle && detalle.length === 0">
-      <p>Sin productos registrados.</p>
+      <p>Sin movimientos registrados.</p>
     </div>
 
-    <table class="tabla" *ngIf="!cargandoDetalle && detalle.length > 0">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Modelo</th>
-          <th>N° Serie</th>
-          <th>Cantidad</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let d of detalle">
-          <td>
-            <strong>{{ d.producto }}</strong>
-            <small *ngIf="d.descripcion">{{ d.descripcion }}</small>
-          </td>
-          <td>{{ d.modelo || '—' }}</td>
-          <td class="td-mono">{{ d.num_serie }}</td>
-          <td class="td-center">{{ d.cantidad }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="!cargandoDetalle && detalle.length > 0">
+      <div class="detalle-producto" *ngFor="let d of detalle">
+        <div class="detalle-producto__body">
+          <div class="detalle-fila">
+            <span class="detalle-label">Producto</span>
+            <span class="detalle-valor"><strong>{{ d.producto }}</strong></span>
+          </div>
+          <div class="detalle-fila" *ngIf="d.modelo">
+            <span class="detalle-label">Modelo</span>
+            <span class="detalle-valor">{{ d.modelo }}</span>
+          </div>
+          <div class="detalle-fila">
+            <span class="detalle-label">N° Serie</span>
+            <span class="detalle-valor td-mono">{{ d.num_serie }}</span>
+          </div>
+          <div class="detalle-fila" *ngIf="d.descripcion">
+            <span class="detalle-label">Descripción</span>
+            <span class="detalle-valor">{{ d.descripcion }}</span>
+          </div>
+          <div class="detalle-fila">
+            <span class="detalle-label">Cantidad</span>
+            <span class="detalle-valor"><strong>{{ d.cantidad }}</strong></span>
+          </div>
+          <div class="detalle-fila">
+            <span class="detalle-label">Hora</span>
+            <span class="detalle-valor detalle-hora">🕐 {{ d.hora }}</span>
+          </div>
+          <div class="detalle-fila" *ngIf="d.nota">
+            <span class="detalle-label">Nota</span>
+            <span class="detalle-valor">{{ d.nota }}</span>
+          </div>
+          <div class="detalle-fila">
+            <span class="detalle-label">Usuario</span>
+            <span class="detalle-valor">👤 {{ d.usuario }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="modal-footer">

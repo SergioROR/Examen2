@@ -8,6 +8,7 @@ import { RespuestaUpsert } from './productos';
 import { RespuestaGeneral } from './productos';
 import { ProductoEditar } from './productos';
 import { ResumenInventario } from './productos';
+import { SolicitudAtendida } from './productos';
 
 @Injectable({
   providedIn: 'root'
@@ -61,5 +62,26 @@ export class ProductosService {
   // 9. Resumen de inventario por plantel y departamento
   ResumenInventario(): Observable<ResumenInventario[]> {
     return this._httpClient.get<ResumenInventario[]>(`${this.baseUrl}/productos/resumen`);
+  }
+
+  VerProductosPrincipal(): Observable<Producto[]> {
+    return this._httpClient.get<Producto[]>(`${this.baseUrl}/productos/principal`);
+  }
+
+  VerSolicitudesAtendidas(): Observable<SolicitudAtendida[]> {
+    return this._httpClient.get<SolicitudAtendida[]>(`${this.baseUrl}/solicitudes/atendidas`);
+  }
+
+  MarcarSolicitudUsada(
+    id_solicitud: number,
+    id_producto_creado: number,
+    id_plantel_destino: number,
+    id_productos: number,
+    cantidad: number
+  ): Observable<any> {
+    return this._httpClient.patch(
+      `${this.baseUrl}/solicitudes/${id_solicitud}/usar`,
+      { id_producto_creado, id_plantel_destino, id_productos, cantidad }
+    );
   }
 }

@@ -34,6 +34,19 @@ export class UsuarioService {
     );
   }
 
+  editarUsuario(datos: {
+    id_usuario: number;
+    nombre?: string;
+    apellidos?: string;
+    correo?: string;
+    rol?: string;
+    id_plantel?: number;
+  }): Observable<{ mensaje: string }> {
+    return this._httpClient.put<{ mensaje: string }>(
+      `${this.baseUrl}/usuario/editar`, datos
+    );
+  }
+
   crearUsuario(usuario: UsuarioC): Observable<any> {
     return this._httpClient.post(`${this.baseUrl}/usuario`, usuario);
   }
@@ -45,5 +58,15 @@ export class UsuarioService {
       body
     );
   }
-  mostrarMenu: boolean = false;
+  get mostrarMenu(): boolean {
+    return !!sessionStorage.getItem('datos_usuario');
+  }
+
+  set mostrarMenu(valor: boolean) {
+    if (valor) {
+      // No hacemos nada aquí, el token ya lo guarda el login
+    } else {
+      sessionStorage.removeItem('datos_usuario');
+    }
+  }
 }

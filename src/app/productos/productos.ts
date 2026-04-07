@@ -76,3 +76,12 @@ export interface RespuestaError {
   mensaje: string;
   detalle?: string;
 }
+
+export interface SolicitudAtendida {
+  id_solicitud: number;
+  nombre:       string;
+  descripcion:  string;
+  modelo:       string;
+  cantidad:     number;
+  id_plantel:   number;
+}

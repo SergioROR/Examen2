@@ -1,1 +1,308 @@
-<p>general works!</p>
+<!-- TOAST -->
+<div class="toast" [class.toast--visible]="successMsg">✓ {{ successMsg }}</div>
+<div class="overlay" *ngIf="modalDetalle" (click)="cerrarDetalle()"></div>
+
+<div class="g-page">
+
+  <!-- LOADER -->
+  <div class="g-loader" *ngIf="cargando">
+    <div class="g-spinner"></div>
+    <p>Cargando dashboard...</p>
+  </div>
+
+  <ng-container *ngIf="!cargando">
+
+    <!-- ══════════════════════════════════════
+         VISTA ADMIN
+    ══════════════════════════════════════ -->
+    <ng-container *ngIf="esAdmin">
+
+      <div class="g-header">
+        <div>
+          <p class="g-label">Sistema de Inventario · Universidad</p>
+          <h1 class="g-title">Dashboard General</h1>
+          <p class="g-sub">{{ mesActual | titlecase }}</p>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="g-stats">
+        <div class="g-stat-card g-stat-card--blue">
+          <div class="g-stat-icon">↑</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.entradas }}</span>
+            <span class="g-stat-label">Entradas este mes</span>
+          </div>
+          <div class="g-stat-bg">↑</div>
+        </div>
+        <div class="g-stat-card g-stat-card--gold">
+          <div class="g-stat-icon">↓</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.salidas }}</span>
+            <span class="g-stat-label">Salidas este mes</span>
+          </div>
+          <div class="g-stat-bg">↓</div>
+        </div>
+        <div class="g-stat-card g-stat-card--green">
+          <div class="g-stat-icon">📦</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.stockTotal }}</span>
+            <span class="g-stat-label">Productos en stock</span>
+          </div>
+          <div class="g-stat-bg">📦</div>
+        </div>
+        <div class="g-stat-card" [class.g-stat-card--warn]="statsAdmin.stockBajo > 0"
+          [class.g-stat-card--neutral]="statsAdmin.stockBajo === 0">
+          <div class="g-stat-icon">⚠</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.stockBajo }}</span>
+            <span class="g-stat-label">Stock bajo (≤5)</span>
+          </div>
+          <div class="g-stat-bg">⚠</div>
+        </div>
+        <div class="g-stat-card" [class.g-stat-card--alert]="statsAdmin.pedidosPendientes > 0"
+          [class.g-stat-card--neutral]="statsAdmin.pedidosPendientes === 0">
+          <div class="g-stat-icon">🛒</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.pedidosPendientes }}</span>
+            <span class="g-stat-label">Pedidos pendientes</span>
+          </div>
+          <div class="g-stat-bg">🛒</div>
+        </div>
+        <div class="g-stat-card" [class.g-stat-card--alert]="statsAdmin.solicitudesPendientes > 0"
+          [class.g-stat-card--neutral]="statsAdmin.solicitudesPendientes === 0">
+          <div class="g-stat-icon">📝</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsAdmin.solicitudesPendientes }}</span>
+            <span class="g-stat-label">Solicitudes pendientes</span>
+          </div>
+          <div class="g-stat-bg">📝</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID: graficas izquierda | pedidos derecha -->
+      <div class="g-main-grid">
+
+        <!-- IZQUIERDA: dos gráficas apiladas -->
+        <div class="g-charts-col">
+
+          <div class="g-chart-card">
+            <div class="g-chart-card-header">
+              <span class="g-chart-dot g-chart-dot--blue"></span>
+              <h3 class="g-chart-title">Planteles mas activos</h3>
+              <span class="g-chart-badge">Este mes</span>
+            </div>
+            <div class="g-chart-wrap" *ngIf="pedidosPorPlantel.length > 0">
+              <canvas #chartPastel></canvas>
+            </div>
+            <div class="g-empty" *ngIf="pedidosPorPlantel.length === 0">
+              Sin pedidos este mes
+            </div>
+          </div>
+
+          <div class="g-chart-card">
+            <div class="g-chart-card-header">
+              <span class="g-chart-dot g-chart-dot--gold"></span>
+              <h3 class="g-chart-title">Productos más solicitados</h3>
+              <span class="g-chart-badge">Este mes</span>
+            </div>
+            <div class="g-chart-wrap g-chart-wrap--bar" *ngIf="productosMasSolicitados.length > 0">
+              <canvas #chartProductos></canvas>
+            </div>
+            <div class="g-empty" *ngIf="productosMasSolicitados.length === 0">
+              Sin datos para mostrar
+            </div>
+          </div>
+
+        </div>
+
+        <!-- DERECHA: panel pedidos recientes -->
+        <div class="g-pedidos-col">
+          <div class="g-pedidos-card">
+            <div class="g-pedidos-header">
+              <div>
+                <h3 class="g-chart-title">Pedidos recientes</h3>
+                <p class="g-pedidos-sub">Últimos {{ pedidosRecientes.length }} movimientos</p>
+              </div>
+            </div>
+
+            <div class="g-empty" *ngIf="pedidosRecientes.length === 0">
+              No hay pedidos recientes
+            </div>
+
+            <div class="g-pedidos-list" *ngIf="pedidosRecientes.length > 0">
+              <div class="g-pedido-item" *ngFor="let p of pedidosRecientes" (click)="verDetalle(p)">
+                <div class="g-pedido-avatar">
+                  <img *ngIf="p.usuario_imagen" [src]="'http://localhost:3005/imagenes/avatares/' + p.usuario_imagen"
+                    [alt]="p.usuario" onerror="this.style.display='none'">
+                  <span *ngIf="!p.usuario_imagen" class="g-pedido-avatar-fallback">
+                    {{ p.usuario.charAt(0) | uppercase }}
+                  </span>
+                </div>
+                <div class="g-pedido-info">
+                  <div class="g-pedido-top">
+                    <span class="g-pedido-plantel">{{ p.plantel }}</span>
+                    <span class="g-badge" [ngClass]="getEstadoClass(p.estado)">
+                      {{ getEstadoLabel(p.estado) }}
+                    </span>
+                  </div>
+                  <div class="g-pedido-usuario">{{ p.usuario }}</div>
+                  <div class="g-pedido-desc">
+                    {{ p.descripcion || 'Sin descripción' }} ·
+                    <span class="g-pedido-prods">{{ p.total_productos }} producto(s)</span>
+                  </div>
+                </div>
+                <div class="g-pedido-fecha">{{ p.fecha }}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </ng-container>
+
+    <!-- ══════════════════════════════════════
+         VISTA USUARIO
+    ══════════════════════════════════════ -->
+    <ng-container *ngIf="!esAdmin">
+
+      <div class="g-header">
+        <div>
+          <p class="g-label">Sistema de Inventario · Universidad</p>
+          <h1 class="g-title">Bienvenido, {{ nombre }} 👋</h1>
+          <p class="g-sub">{{ mesActual | titlecase }}</p>
+        </div>
+      </div>
+
+      <div class="g-stats g-stats--usuario">
+        <div class="g-stat-card g-stat-card--blue">
+          <div class="g-stat-icon">🛒</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsUsuario.misPedidos }}</span>
+            <span class="g-stat-label">Pedidos este mes</span>
+          </div>
+          <div class="g-stat-bg">🛒</div>
+        </div>
+        <div class="g-stat-card g-stat-card--green">
+          <div class="g-stat-icon">📦</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsUsuario.pedidosEntregados }}</span>
+            <span class="g-stat-label">Entregados</span>
+          </div>
+          <div class="g-stat-bg">📦</div>
+        </div>
+        <div class="g-stat-card" [class.g-stat-card--alert]="statsUsuario.pedidosPendientes > 0"
+          [class.g-stat-card--neutral]="statsUsuario.pedidosPendientes === 0">
+          <div class="g-stat-icon">⏳</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsUsuario.pedidosPendientes }}</span>
+            <span class="g-stat-label">En proceso</span>
+          </div>
+          <div class="g-stat-bg">⏳</div>
+        </div>
+        <div class="g-stat-card g-stat-card--gold">
+          <div class="g-stat-icon">📝</div>
+          <div class="g-stat-info">
+            <span class="g-stat-num">{{ statsUsuario.solicitudesPendientes }}</span>
+            <span class="g-stat-label">Solicitudes pendientes</span>
+          </div>
+          <div class="g-stat-bg">📝</div>
+        </div>
+      </div>
+
+      <!-- MIS PEDIDOS RECIENTES -->
+      <div class="g-pedidos-card g-pedidos-card--full">
+        <div class="g-pedidos-header">
+          <div>
+            <h3 class="g-chart-title">Mis pedidos recientes</h3>
+            <p class="g-pedidos-sub">Últimos {{ misPedidosRecientes.length }} pedidos</p>
+          </div>
+        </div>
+
+        <div class="g-empty" *ngIf="misPedidosRecientes.length === 0">
+          No tienes pedidos aún. ¡Haz tu primer pedido desde la sección Pedidos!
+        </div>
+
+        <div class="g-pedidos-list" *ngIf="misPedidosRecientes.length > 0">
+          <div class="g-pedido-item" *ngFor="let p of misPedidosRecientes" (click)="verDetalle(p)">
+            <div class="g-pedido-avatar g-pedido-avatar--usuario">
+              <span>{{ p.id_pedido }}</span>
+            </div>
+            <div class="g-pedido-info">
+              <div class="g-pedido-top">
+                <span class="g-pedido-plantel">{{ p.descripcion || 'Sin descripción' }}</span>
+                <span class="g-badge" [ngClass]="getEstadoClass(p.estado)">
+                  {{ getEstadoLabel(p.estado) }}
+                </span>
+              </div>
+              <div class="g-pedido-desc">
+                <span class="g-pedido-prods">{{ p.total_productos }} producto(s)</span>
+              </div>
+            </div>
+            <div class="g-pedido-fecha">{{ p.fecha }}</div>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+  </ng-container>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="g-modal-wrap" *ngIf="modalDetalle">
+  <div class="g-modal">
+    <div class="g-modal-header">
+      <div>
+        <h2>Pedido #{{ pedidoSeleccionado?.id_pedido }}</h2>
+        <p>{{ pedidoSeleccionado?.plantel }} · {{ pedidoSeleccionado?.usuario }} · {{ pedidoSeleccionado?.fecha }}</p>
+      </div>
+      <button class="g-modal-close" (click)="cerrarDetalle()">✕</button>
+    </div>
+
+    <div class="g-modal-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+    <div class="g-modal-body">
+      <div class="g-loader" *ngIf="cargandoDetalle">
+        <div class="g-spinner"></div>
+      </div>
+      <table class="g-tabla" *ngIf="!cargandoDetalle && detallePedido.length > 0">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Modelo</th>
+            <th>N° Serie</th>
+            <th>Cant.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of detallePedido">
+            <td><strong>{{ d.producto }}</strong><br><small style="color:#8a8476">{{ d.descripcion }}</small></td>
+            <td>{{ d.modelo || '—' }}</td>
+            <td style="font-family:monospace;font-size:12px">{{ d.num_serie }}</td>
+            <td style="text-align:center"><strong>{{ d.cantidad }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="g-modal-footer">
+      <button class="g-btn g-btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+      <ng-container *ngIf="esAdmin">
+        <ng-container *ngIf="pedidoSeleccionado?.estado === 'pendiente'">
+          <button class="g-btn g-btn-danger" (click)="cambiarEstado('rechazado')" [disabled]="accionCargando">❌
+            Rechazar</button>
+          <button class="g-btn g-btn-success" (click)="cambiarEstado('aceptado')" [disabled]="accionCargando">✅
+            Aceptar</button>
+        </ng-container>
+        <ng-container *ngIf="pedidoSeleccionado?.estado === 'aceptado'">
+          <button class="g-btn g-btn-primary" (click)="cambiarEstado('en_camino')" [disabled]="accionCargando">
+            🚚 {{ accionCargando ? 'Procesando...' : 'Enviar pedido' }}
+          </button>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</div>

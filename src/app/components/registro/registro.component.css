@@ -310,3 +310,189 @@ body { font-family: 'DM Sans', sans-serif; color: var(--texto); background: #f0f
   .tabla th, .tabla td { padding: 10px 10px; }
   .page { padding: 20px 12px; }
 }
+
+/* ── Detalle de productos por movimiento ── */
+.detalle-producto {
+  border: 1px solid var(--gris-2);
+  border-radius: var(--radio);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.detalle-producto__body {
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+}
+
+.detalle-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detalle-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--gris-3);
+}
+
+.detalle-valor {
+  font-size: 14px;
+  color: var(--texto);
+}
+
+.detalle-hora {
+  color: var(--azul-med);
+  font-weight: 600;
+}
+
+/* ── Banner plantel en modal detalle ── */
+.detalle-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: var(--radio);
+  margin-bottom: 20px;
+  border: 1px solid;
+}
+
+.detalle-banner--entrada {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.detalle-banner--salida {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.detalle-banner__icono {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.detalle-banner--entrada .detalle-banner__icono {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.detalle-banner--salida .detalle-banner__icono {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.detalle-banner__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detalle-banner__tipo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--gris-3);
+}
+
+.detalle-banner__plantel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.detalle-banner__dept {
+  font-size: 13px;
+  color: var(--gris-4);
+}
+
+/* ── Header colores por tipo ── */
+.modal-header--entrada { background: #166534 !important; }
+.modal-header--salida  { background: #991b1b !important; }
+
+/* ── Banner plantel/departamento ── */
+.detalle-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid;
+  flex-shrink: 0;
+}
+
+.detalle-banner--entrada {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.detalle-banner--salida {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.detalle-banner__icono {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.detalle-banner--entrada .detalle-banner__icono {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.detalle-banner--salida .detalle-banner__icono {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.detalle-banner__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detalle-banner__etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #6b7280;
+}
+
+.detalle-banner__plantel {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  font-family: 'Source Serif 4', serif;
+}
+
+.detalle-banner__dept {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.detalle-banner__origen {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+  font-style: italic;
+}

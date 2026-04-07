@@ -1,1 +1,194 @@
-<p>pedidos works!</p>
+<!-- admin-pedidos.component.html -->
+
+<div class="toast" [class.toast--visible]="successMsg">✓ {{ successMsg }}</div>
+<div class="overlay" *ngIf="modalDetalle" (click)="cerrarDetalle()"></div>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="page-label">Sistema de Inventario · Universidad</p>
+      <h1 class="page-title">Gestión de Pedidos</h1>
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg && !modalDetalle">
+    ⚠ {{ errorMsg }} <button class="alert-close" (click)="errorMsg=''">✕</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-bar">
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'pendientes'"
+            (click)="tabActiva = 'pendientes'">
+      ⏳ Pendientes
+      <span class="tab-badge" *ngIf="pendientes.length > 0">{{ pendientes.length }}</span>
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'aceptados'"
+            (click)="tabActiva = 'aceptados'">
+      🚚 Aceptados / En camino
+      <span class="tab-badge" *ngIf="aceptados.length > 0">{{ aceptados.length }}</span>
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'solicitudes'"
+            (click)="tabActiva = 'solicitudes'">
+      📝 Solicitudes de productos
+      <span class="tab-badge tab-badge--warn" *ngIf="solicitudes.length > 0">{{ solicitudes.length }}</span>
+    </button>
+  </div>
+
+  <div class="loader-wrap" *ngIf="cargando"><div class="spinner"></div></div>
+
+  <!-- TAB: PENDIENTES -->
+  <div class="table-wrap" *ngIf="tabActiva === 'pendientes' && !cargando">
+    <div class="empty-state" *ngIf="pendientes.length === 0">
+      <p>✅ No hay pedidos pendientes.</p>
+    </div>
+    <table class="tabla" *ngIf="pendientes.length > 0">
+      <thead>
+        <tr><th>#</th><th>Fecha</th><th>Plantel</th><th>Usuario</th><th>Productos</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pendientes">
+          <td class="td-id">{{ p.id_pedido }}</td>
+          <td>{{ p.fecha }}</td>
+          <td>{{ p.plantel }}</td>
+          <td>{{ p.usuario }}</td>
+          <td class="td-center">{{ p.total_productos }}</td>
+          <td><span class="estado-badge" [ngClass]="getEstadoClass(p.estado)">{{ getEstadoLabel(p.estado) }}</span></td>
+          <td>
+            <button class="icon-btn icon-btn--blue" title="Ver y gestionar" (click)="verDetalle(p)">👁</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB: ACEPTADOS -->
+  <div class="table-wrap" *ngIf="tabActiva === 'aceptados' && !cargando">
+    <div class="empty-state" *ngIf="aceptados.length === 0">
+      <p>📭 No hay pedidos aceptados pendientes de envío.</p>
+    </div>
+    <table class="tabla" *ngIf="aceptados.length > 0">
+      <thead>
+        <tr><th>#</th><th>Fecha</th><th>Plantel</th><th>Usuario</th><th>Productos</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of aceptados">
+          <td class="td-id">{{ p.id_pedido }}</td>
+          <td>{{ p.fecha }}</td>
+          <td>{{ p.plantel }}</td>
+          <td>{{ p.usuario }}</td>
+          <td class="td-center">{{ p.total_productos }}</td>
+          <td><span class="estado-badge" [ngClass]="getEstadoClass(p.estado)">{{ getEstadoLabel(p.estado) }}</span></td>
+          <td>
+            <button class="icon-btn icon-btn--blue" title="Ver y enviar" (click)="verDetalle(p)">👁</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB: SOLICITUDES -->
+  <div class="table-wrap" *ngIf="tabActiva === 'solicitudes' && !cargando">
+    <div class="empty-state" *ngIf="solicitudes.length === 0">
+      <p>📭 No hay solicitudes de productos.</p>
+    </div>
+    <table class="tabla" *ngIf="solicitudes.length > 0">
+      <thead>
+        <tr><th>#</th><th>Producto solicitado</th><th>Descripción</th><th>Plantel</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of solicitudes">
+          <td class="td-id">{{ s.id_solicitud }}</td>
+          <td><strong>{{ s.nombre }}</strong></td>
+          <td><small>{{ s.descripcion || '—' }}</small></td>
+          <td>{{ s.plantel }}</td>
+          <td>{{ s.usuario }}</td>
+          <td>
+            <span class="estado-badge" [ngClass]="getEstadoClass(s.estado)">
+              {{ s.estado === 'pendiente' ? '⏳ Pendiente' : s.estado === 'atendido' ? '✅ Atendido' : '❌ Rechazado' }}
+            </span>
+          </td>
+          <td>
+            <div class="acciones" *ngIf="s.estado === 'pendiente'">
+              <button class="btn btn-success btn-sm" (click)="atenderSolicitud(s.id_solicitud, 'atendido')">✅ Atender</button>
+              <button class="btn btn-danger btn-sm"  (click)="atenderSolicitud(s.id_solicitud, 'rechazado')">❌ Rechazar</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL DETALLE PEDIDO -->
+<div class="modal" *ngIf="modalDetalle">
+  <div class="modal-header">
+    <div>
+      <h2>Pedido #{{ pedidoSeleccionado?.id_pedido }}</h2>
+      <p style="font-size:12px;opacity:.75;margin-top:3px;">
+        {{ pedidoSeleccionado?.plantel }} · {{ pedidoSeleccionado?.usuario }} · {{ pedidoSeleccionado?.fecha }}
+      </p>
+    </div>
+    <button class="modal-close" (click)="cerrarDetalle()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <!-- Alerta de stock insuficiente -->
+  <div class="detalle-banner detalle-banner--salida"
+       *ngIf="!cargandoDetalle && detalle.length > 0 && !stockSuficiente()">
+    <div class="detalle-banner__icono">⚠</div>
+    <div class="detalle-banner__info">
+      <span class="detalle-banner__etiqueta">Stock insuficiente</span>
+      <span class="detalle-banner__plantel" style="font-size:14px;">
+        Algunos productos no tienen suficiente stock para enviar este pedido.
+      </span>
+    </div>
+  </div>
+
+  <div class="modal-body">
+    <div class="loader-wrap" *ngIf="cargandoDetalle"><div class="spinner"></div></div>
+
+    <table class="tabla tabla-sm" *ngIf="!cargandoDetalle && detalle.length > 0">
+      <thead>
+        <tr><th>Producto</th><th>Modelo</th><th>N° Serie</th><th>Solicitado</th><th>Stock actual</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of detalle"
+            [class.fila-error]="d.stock_actual < d.cantidad">
+          <td><strong>{{ d.producto }}</strong><br><small>{{ d.descripcion }}</small></td>
+          <td>{{ d.modelo || '—' }}</td>
+          <td class="td-mono">{{ d.num_serie }}</td>
+          <td class="td-center"><strong>{{ d.cantidad }}</strong></td>
+          <td class="td-center">
+            <span class="badge" [ngClass]="d.stock_actual >= d.cantidad ? 'stock-ok' : 'stock-empty'">
+              {{ d.stock_actual }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+
+    <!-- Acciones para pedidos PENDIENTES -->
+    <ng-container *ngIf="pedidoSeleccionado?.estado === 'pendiente'">
+      <button class="btn btn-danger" (click)="cambiarEstado('rechazado')" [disabled]="accionCargando">
+        ❌ Rechazar
+      </button>
+      <button class="btn btn-success" (click)="cambiarEstado('aceptado')" [disabled]="accionCargando">
+        ✅ Aceptar
+      </button>
+    </ng-container>
+
+    <!-- Acción para pedidos ACEPTADOS: enviar solo si hay stock -->
+    <ng-container *ngIf="pedidoSeleccionado?.estado === 'aceptado'">
+      <button class="btn btn-primary" (click)="cambiarEstado('en_camino')"
+              [disabled]="accionCargando || !stockSuficiente()"
+              [title]="!stockSuficiente() ? 'Stock insuficiente para enviar' : 'Enviar pedido'">
+        🚚 {{ accionCargando ? 'Procesando...' : 'Enviar pedido' }}
+      </button>
+    </ng-container>
+  </div>
+</div>

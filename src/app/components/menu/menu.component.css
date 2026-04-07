@@ -3,7 +3,7 @@
   justify-content: space-between;
   align-items: center;
   width: 96vw;
-  height: 55px; 
+  height: 55px;
   background: #111;
   margin: 10px auto;
   padding: 0 20px;
@@ -17,17 +17,16 @@
 .system-name {
   color: #fff;
   font-weight: 800;
-  font-size: 1.1em; 
+  font-size: 1.1em;
   letter-spacing: 0.5px;
 }
-
 
 /* --- MENÚ CENTRAL --- */
 .nav-menu {
   position: relative;
   display: flex;
-  height: 38px; 
-  width: 650px; 
+  height: 38px;
+  width: 650px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   overflow: hidden;
@@ -45,11 +44,64 @@
   font-size: 0.85em;
 }
 
+/* --- INDICATOR --- */
+.nav-menu .indicator {
+  position: absolute;
+  inset: 0 auto 0 0;
+  /* ✅ Usa la variable dinámica según el rol */
+  width: calc(100% / var(--total-items));
+  height: 100%;
+  background: linear-gradient(45deg, #081b29, #0ef);
+  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.nav-menu a.active {
+  color: #0ef;
+  font-weight: 600;
+}
+
+/* ✅ Hover dinámico usando la variable --total-items */
+.nav-menu:has(a:nth-child(1):hover) .indicator { left: 0% !important; }
+.nav-menu:has(a:nth-child(2):hover) .indicator { left: calc(100% / var(--total-items) * 1) !important; }
+.nav-menu:has(a:nth-child(3):hover) .indicator { left: calc(100% / var(--total-items) * 2) !important; }
+.nav-menu:has(a:nth-child(4):hover) .indicator { left: calc(100% / var(--total-items) * 3) !important; }
+.nav-menu:has(a:nth-child(5):hover) .indicator { left: calc(100% / var(--total-items) * 4) !important; }
+.nav-menu:has(a:nth-child(6):hover) .indicator { left: calc(100% / var(--total-items) * 5) !important; }
+
 /* --- SECCIÓN USUARIO --- */
 .nav-user {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 1000;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown button:hover {
+  background: #f5f5f5;
 }
 
 .user-info {
@@ -74,40 +126,132 @@
   height: 32px;
   border-radius: 50%;
   border: 1.5px solid #0ef;
+  margin-left: 10px;
 }
-
-/* --- INDICATOR CON CÁLCULO EXACTO --- */
-.nav-menu .indicator {
-  position: absolute;
-  inset: 0  auto 0 0;   /* top right bottom left */
-  width: calc(100% / 6);
-  height: 100%;
-  background: linear-gradient(45deg, #081b29, #0ef);
-  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-  border-radius: 8px;
-  pointer-events: none;
-}
-
-.nav-menu a.active {
-  color: #0ef;
-  font-weight: 600;
-}
-
-/* LÓGICA DE ANIMACIÓN (Hover) */
-/* Multiplicamos el ancho base (100/6) por la posición del botón */
-.nav-menu:has(a:nth-child(1):hover) .indicator { left: 0% !important; }
-.nav-menu:has(a:nth-child(2):hover) .indicator { left: calc(100% / 6 * 1) !important; }
-.nav-menu:has(a:nth-child(3):hover) .indicator { left: calc(100% / 6 * 2) !important; }
-.nav-menu:has(a:nth-child(4):hover) .indicator { left: calc(100% / 6 * 3) !important; }
-.nav-menu:has(a:nth-child(5):hover) .indicator { left: calc(100% / 6 * 4) !important; }
-.nav-menu:has(a:nth-child(6):hover) .indicator { left: calc(100% / 6 * 5) !important; }
 
 .content-area {
   padding: 20px;
   width: 96vw;
   margin: 0 auto;
-  /* Esto asegura que el contenido empiece debajo del menú */
   display: flex;
   justify-content: center;
 }
+
+/* Agrega esto al final de menu.component.css */
+
+/* ── Avatar en navbar ── */
+.user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  position: relative;
+}
+
+.user-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,.3);
+  transition: border-color .2s;
+}
+
+.user-avatar:hover img {
+  border-color: rgba(255,255,255,.8);
+}
+
+.avatar-chevron {
+  font-size: 12px;
+  color: rgba(255,255,255,.7);
+  transition: transform .2s;
+  line-height: 1;
+}
+
+.avatar-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1);
+  min-width: 220px;
+  z-index: 999;
+  overflow: hidden;
+  animation: dropIn .18s cubic-bezier(.2,.8,.4,1);
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+}
+
+.dropdown-header img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.dropdown-header div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.dropdown-nombre {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-rol {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s;
+  color: #374151;
+}
+
+.dropdown-item:hover { background: #f3f4f6; }
+
+.dropdown-item--danger { color: #dc2626; }
+.dropdown-item--danger:hover { background: #fef2f2; }

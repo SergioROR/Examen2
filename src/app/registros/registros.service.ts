@@ -3,13 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { RegistroResumen, RegistroDetalle, CrearRegistro } from './registros';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class RegistrosService {
 
-  constructor(private _httpClient: HttpClient) { }
-  private baseUrl: string = 'http://localhost:3005';  // sin /api al final
+  private baseUrl = 'http://localhost:3005';
+
+  constructor(private _httpClient: HttpClient) {}
 
   CrearRegistro(data: CrearRegistro): Observable<{ mensaje: string; id_registro: number }> {
     return this._httpClient.post<{ mensaje: string; id_registro: number }>(
@@ -24,10 +23,16 @@ export class RegistrosService {
     );
   }
 
-  VerDetalle(id_registro: number): Observable<RegistroDetalle[]> {
+  // Detalle por día + tipo (ya no usa id_registro sino fecha+tipo)
+  VerDetalle(fecha: string, tipo: string, id_plantel: number, id_departamento: number): Observable<RegistroDetalle[]> {
     return this._httpClient.get<RegistroDetalle[]>(
       `${this.baseUrl}/api/registros/detalle`,
-      { headers: { 'x-registro': String(id_registro) } }
+      { headers: {
+          'x-fecha':         fecha,
+          'x-tipo':          tipo,
+          'x-plantel':       String(id_plantel),
+          'x-departamento':  String(id_departamento)
+      }}
     );
   }
 }

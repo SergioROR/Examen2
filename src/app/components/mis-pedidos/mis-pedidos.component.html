@@ -1,0 +1,210 @@
+<!-- mis-pedidos.component.html -->
+
+<div class="toast" [class.toast--visible]="successMsg">✓ {{ successMsg }}</div>
+
+<div class="overlay" *ngIf="modalNuevo || modalSolicitud || modalDetalle"
+     (click)="cerrarNuevo(); cerrarSolicitud(); cerrarDetalle()"></div>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="page-label">Sistema de Inventario · Universidad</p>
+      <h1 class="page-title">Mis Pedidos</h1>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-ghost" (click)="abrirSolicitud()">+ Solicitar producto nuevo</button>
+      <button class="btn btn-primary" (click)="abrirNuevo()">+ Nuevo Pedido</button>
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg && !modalNuevo && !modalSolicitud">
+    ⚠ {{ errorMsg }} <button class="alert-close" (click)="errorMsg=''">✕</button>
+  </div>
+
+  <div class="loader-wrap" *ngIf="cargando">
+    <div class="spinner"></div><p>Cargando pedidos...</p>
+  </div>
+
+  <div class="table-wrap" *ngIf="!cargando">
+    <div class="empty-state" *ngIf="pedidos.length === 0">
+      <p>📋 No tienes pedidos aún. ¡Haz tu primer pedido!</p>
+    </div>
+    <table class="tabla" *ngIf="pedidos.length > 0">
+      <thead>
+        <tr>
+          <th>#</th><th>Fecha</th><th>Descripción</th>
+          <th>Productos</th><th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pedidos">
+          <td class="td-id">{{ p.id_pedido }}</td>
+          <td>{{ p.fecha }}</td>
+          <td>{{ p.descripcion || '—' }}</td>
+          <td class="td-center">{{ p.total_productos }}</td>
+          <td>
+            <span class="estado-badge" [ngClass]="getEstadoClass(p.estado)">
+              {{ getEstadoLabel(p.estado) }}
+            </span>
+          </td>
+          <td>
+            <div class="acciones">
+              <button class="icon-btn icon-btn--blue" title="Ver detalle" (click)="verDetalle(p)">👁</button>
+              <button class="btn btn-success btn-sm" *ngIf="p.estado === 'en_camino'"
+                      (click)="confirmarEntrega(p.id_pedido)"[disabled]="entregaEnProceso">
+                {{ entregaEnProceso ? 'Confirmando...' : 'Confirmar entrega' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO PEDIDO -->
+<div class="modal-salidas" *ngIf="modalNuevo">
+  <div class="modal-header">
+    <h2>+ Nuevo Pedido</h2>
+    <button class="modal-close" (click)="cerrarNuevo()">✕</button>
+  </div>
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+  <div class="modal-body">
+
+    <div class="field field-full" style="margin-bottom:16px;">
+      <label>Descripción del pedido (opcional)</label>
+      <input type="text" placeholder="Ej. Equipos para sala 3..." [(ngModel)]="descripcionPedido" />
+    </div>
+
+    <div class="search-bar" style="margin-bottom:12px;">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input"
+             placeholder="Buscar producto del catálogo..."
+             [(ngModel)]="busquedaProducto"
+             (ngModelChange)="filtrarCatalogo()" />
+    </div>
+
+    <div class="salida-lista" *ngIf="catalogoFiltrado.length > 0">
+      <div class="salida-item" *ngFor="let p of catalogoFiltrado" (click)="agregarItem(p)">
+        <div class="salida-item__info">
+          <span class="salida-item__nombre">{{ p.nombre }}</span>
+          <div class="salida-item__chips">
+            <span class="salida-chip" *ngIf="p.descripcion">{{ p.descripcion }}</span>
+            <span class="salida-chip salida-chip--mono">Serie: {{ p.num_serie }}</span>
+            <span class="salida-chip" *ngIf="p.modelo">Modelo: {{ p.modelo }}</span>
+          </div>
+        </div>
+        <span class="badge stock-ok">Stock: {{ p.cantidad }}</span>
+        <span class="salida-item__add">+ Agregar</span>
+      </div>
+    </div>
+
+    <div class="salida-vacia" *ngIf="busquedaProducto && catalogoFiltrado.length === 0">
+      No se encontró ese producto.
+      <button class="btn btn-ghost" style="margin-left:12px;" (click)="cerrarNuevo(); abrirSolicitud()">
+        Solicitar producto nuevo
+      </button>
+    </div>
+
+    <div class="salida-seleccionados" *ngIf="itemsPedido.length > 0">
+      <h3 class="salida-titulo">Productos del pedido ({{ itemsPedido.length }})</h3>
+      <table class="tabla tabla-sm">
+        <thead>
+          <tr><th>Producto</th><th>Modelo</th><th>N° Serie</th><th>Stock</th><th>Cantidad</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of itemsPedido; let i = index">
+            <td><strong>{{ s.producto.nombre }}</strong></td>
+            <td>{{ s.producto.modelo || '—' }}</td>
+            <td class="td-mono">{{ s.producto.num_serie }}</td>
+            <td class="td-center">{{ s.producto.cantidad }}</td>
+            <td>
+              <input class="input-cantidad" type="number" min="1"
+                     [max]="s.producto.cantidad" [(ngModel)]="s.cantidad" />
+            </td>
+            <td><button class="icon-btn icon-btn--red" (click)="quitarItem(i)">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="salida-vacia" *ngIf="itemsPedido.length === 0 && !busquedaProducto">
+      Busca y agrega productos para tu pedido.
+    </div>
+  </div>
+  <div class="modal-footer">
+    <span class="footer-info" *ngIf="itemsPedido.length > 0">
+      {{ itemsPedido.length }} producto{{ itemsPedido.length !== 1 ? 's' : '' }}
+    </span>
+    <button class="btn btn-ghost" (click)="cerrarNuevo()">Cancelar</button>
+    <button class="btn btn-primary" (click)="confirmarPedido()"
+            [disabled]="itemsPedido.length === 0 || modalCargando">
+      {{ modalCargando ? 'Enviando...' : '📤 Enviar Pedido' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: SOLICITUD PRODUCTO NUEVO -->
+<div class="modal" *ngIf="modalSolicitud">
+  <div class="modal-header">
+    <h2>Solicitar Producto Nuevo</h2>
+    <button class="modal-close" (click)="cerrarSolicitud()">✕</button>
+  </div>
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Nombre del producto *</label>
+        <input type="text" placeholder="Ej. Monitor 4K" [(ngModel)]="solicitudNombre" />
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" placeholder="Ej. LG-27UK850" [(ngModel)]="solicitudModelo" />
+      </div>
+      <div class="field">
+        <label>Cantidad *</label>
+        <input type="number" min="1" [(ngModel)]="solicitudCantidad" />
+      </div>
+      <div class="field field-full">
+        <label>Descripción</label>
+        <textarea rows="3" placeholder="Especificaciones, marca, uso..." [(ngModel)]="solicitudDesc"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarSolicitud()">Cancelar</button>
+    <button class="btn btn-primary" (click)="enviarSolicitud()" [disabled]="modalCargando">
+      {{ modalCargando ? 'Enviando...' : 'Enviar Solicitud' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: DETALLE PEDIDO -->
+<div class="modal" *ngIf="modalDetalle">
+  <div class="modal-header">
+    <div>
+      <h2>Pedido #{{ pedidoSeleccionado?.id_pedido }}</h2>
+      <p style="font-size:12px;opacity:.75;margin-top:3px;">{{ pedidoSeleccionado?.fecha }}</p>
+    </div>
+    <button class="modal-close" (click)="cerrarDetalle()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="loader-wrap" *ngIf="cargandoDetalle"><div class="spinner"></div></div>
+    <table class="tabla tabla-sm" *ngIf="!cargandoDetalle && detalle.length > 0">
+      <thead>
+        <tr><th>Producto</th><th>Modelo</th><th>N° Serie</th><th>Cantidad</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of detalle">
+          <td><strong>{{ d.producto }}</strong><br><small>{{ d.descripcion }}</small></td>
+          <td>{{ d.modelo || '—' }}</td>
+          <td class="td-mono">{{ d.num_serie }}</td>
+          <td class="td-center">{{ d.cantidad }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+  </div>
+</div>

@@ -1,1 +1,166 @@
-<p>departamentos works!</p>
+<!-- TOAST -->
+<div class="dp-toast" [class.dp-toast--visible]="successMsg">✓ {{ successMsg }}</div>
+
+<!-- OVERLAYS -->
+<div class="dp-overlay" *ngIf="modalForm || modalEliminar"
+     (click)="cerrarForm(); cerrarEliminar()"></div>
+
+<div class="dp-page">
+
+  <!-- HEADER -->
+  <div class="dp-header">
+    <div>
+      <p class="dp-label">Sistema de Inventario · Universidad</p>
+      <h1 class="dp-title">Departamentos</h1>
+      <p class="dp-sub">Gestión de departamentos de tu plantel</p>
+    </div>
+    <button class="dp-btn-new" (click)="abrirForm()">
+      + Nuevo Departamento
+    </button>
+  </div>
+
+  <!-- ALERT ERROR GLOBAL -->
+  <div class="dp-alert dp-alert--error" *ngIf="errorMsg && !modalForm && !modalEliminar">
+    ⚠ {{ errorMsg }}
+    <button (click)="errorMsg = ''">✕</button>
+  </div>
+
+  <!-- LOADER -->
+  <div class="dp-loader" *ngIf="cargando">
+    <div class="dp-spinner"></div>
+    <p>Cargando departamentos...</p>
+  </div>
+
+  <!-- CONTENIDO -->
+  <ng-container *ngIf="!cargando">
+
+    <!-- EMPTY -->
+    <div class="dp-empty" *ngIf="departamentos.length === 0">
+      <div class="dp-empty-icon">🏢</div>
+      <p>No hay departamentos registrados en tu plantel.</p>
+      <button class="dp-btn-new" (click)="abrirForm()">+ Crear primer departamento</button>
+    </div>
+
+    <!-- TABLA -->
+    <div class="dp-table-card" *ngIf="departamentos.length > 0">
+      <div class="dp-table-header">
+        <h3 class="dp-table-title">
+          Departamentos registrados
+          <span class="dp-count">{{ departamentos.length }}</span>
+        </h3>
+      </div>
+
+      <table class="dp-tabla">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of departamentos; let i = index">
+            <td class="dp-td-id">{{ i + 1 }}</td>
+            <td>
+              <div class="dp-dept-name">
+                <span class="dp-dept-dot"></span>
+                <strong>{{ d.nombre }}</strong>
+              </div>
+            </td>
+            <td class="dp-td-desc">{{ d.descripcion || '—' }}</td>
+            <td>
+              <button class="dp-icon-btn dp-icon-btn--red"
+                      title="Eliminar"
+                      (click)="abrirEliminar(d)">✕</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- ═══════════════════════════════════
+     MODAL CREAR
+═══════════════════════════════════ -->
+<div class="dp-modal" *ngIf="modalForm">
+  <div class="dp-modal-header">
+    <h2>Nuevo Departamento</h2>
+    <button class="dp-modal-close" (click)="cerrarForm()">✕</button>
+  </div>
+
+  <div class="dp-alert dp-alert--error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="dp-modal-body">
+    <div class="dp-field">
+      <label class="dp-label-field">
+        <span class="dp-label-dot"></span>
+        Nombre *
+      </label>
+      <input type="text" class="dp-input"
+             [(ngModel)]="nombre"
+             placeholder="Ej. Laboratorio de Cómputo"
+             [disabled]="formCargando" />
+    </div>
+
+    <div class="dp-field">
+      <label class="dp-label-field">
+        <span class="dp-label-dot"></span>
+        Descripción *
+      </label>
+      <textarea class="dp-input dp-textarea"
+                [(ngModel)]="descripcion"
+                placeholder="Describe el propósito de este departamento..."
+                rows="3"
+                [disabled]="formCargando"></textarea>
+    </div>
+
+    <div class="dp-info-box">
+      <span>🏢</span>
+      <span>Este departamento se registrará en el plantel de tu cuenta.</span>
+    </div>
+  </div>
+
+  <div class="dp-modal-footer">
+    <button class="dp-btn dp-btn-ghost" (click)="cerrarForm()" [disabled]="formCargando">
+      Cancelar
+    </button>
+    <button class="dp-btn dp-btn-primary" (click)="guardar()" [disabled]="formCargando">
+      <span *ngIf="!formCargando">✓ Guardar</span>
+      <span *ngIf="formCargando" class="dp-spinner-wrap">
+        <span class="dp-spinner"></span> Guardando...
+      </span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     MODAL ELIMINAR
+═══════════════════════════════════ -->
+<div class="dp-modal dp-modal--sm" *ngIf="modalEliminar">
+  <div class="dp-modal-header dp-modal-header--danger">
+    <h2>Eliminar Departamento</h2>
+    <button class="dp-modal-close" (click)="cerrarEliminar()">✕</button>
+  </div>
+
+  <div class="dp-alert dp-alert--error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="dp-modal-body dp-confirm-box">
+    <div class="dp-confirm-icon">⚠</div>
+    <p>¿Estás seguro de eliminar el departamento</p>
+    <p><strong>{{ deptSeleccionado?.nombre }}</strong>?</p>
+    <p class="dp-confirm-sub">Esta acción no se puede deshacer.</p>
+  </div>
+
+  <div class="dp-modal-footer">
+    <button class="dp-btn dp-btn-ghost" (click)="cerrarEliminar()"
+            [disabled]="eliminandoCargando">Cancelar</button>
+    <button class="dp-btn dp-btn-danger" (click)="confirmarEliminar()"
+            [disabled]="eliminandoCargando">
+      {{ eliminandoCargando ? 'Eliminando...' : '✕ Eliminar' }}
+    </button>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 <div class="page-wrapper">
   <div class="form-card">
 
+    <!-- LEFT PANEL: Avatar selector -->
     <div class="left-panel">
       <div class="panel-bg-decoration"></div>
       <div class="panel-content">
@@ -10,29 +11,32 @@
 
         <div class="avatar-section">
           <div class="avatar-upload-ring">
-            <div class="avatar-preview" (click)="triggerFileInput()">
-              <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview" class="preview-img" />
-              <div *ngIf="!previewUrl" class="upload-placeholder">
+            <div class="avatar-preview" (click)="abrirSelectorAvatar()">
+              <img *ngIf="avatarSeleccionado" 
+                   [src]="getUrlAvatar(avatarSeleccionado)" 
+                   alt="Avatar" class="preview-img"
+                   onerror="this.src='assets/default-avatar.png'" />
+              <div *ngIf="!avatarSeleccionado" class="upload-placeholder">
                 <div class="upload-icon">
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                   </svg>
                 </div>
-                <p class="upload-hint">Subir foto</p>
+                <p class="upload-hint">Elegir avatar</p>
               </div>
             </div>
           </div>
-          <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" class="hidden-input" />
-          <button type="button" class="upload-btn" (click)="triggerFileInput()">
+
+          <button type="button" class="upload-btn" (click)="abrirSelectorAvatar()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
-            Seleccionar imagen
+            {{ avatarSeleccionado ? 'Cambiar avatar' : 'Seleccionar avatar' }}
           </button>
-          <p class="upload-note">JPG, PNG o GIF · Máx. 5MB</p>
+          <p class="upload-note">Elige una imagen del sistema</p>
         </div>
 
         <div class="panel-footer">
@@ -51,25 +55,15 @@
 
       <form (ngSubmit)="guardarUsuario()" #userForm="ngForm" novalidate class="main-form">
 
-        <!-- Row: Nombre + Apellidos -->
         <div class="form-row">
           <div class="form-group" [class.has-error]="nombre.invalid && nombre.touched">
             <label class="field-label" for="nombre">
               <span class="label-dot"></span>Nombre
             </label>
             <div class="input-wrapper">
-              <input
-                id="nombre"
-                type="text"
-                [(ngModel)]="usuario.nombre"
-                name="nombre"
-                #nombre="ngModel"
-                required
-                minlength="2"
-                maxlength="50"
-                class="field-input"
-                placeholder="Ej. Carlos"
-              />
+              <input id="nombre" type="text" [(ngModel)]="usuario.nombre" name="nombre"
+                #nombre="ngModel" required minlength="2" maxlength="50"
+                class="field-input" placeholder="Ej. Carlos" />
               <span class="input-border"></span>
             </div>
             <div class="error-msg" *ngIf="nombre.invalid && nombre.touched">
@@ -83,18 +77,9 @@
               <span class="label-dot"></span>Apellidos
             </label>
             <div class="input-wrapper">
-              <input
-                id="apellidos"
-                type="text"
-                [(ngModel)]="usuario.apellidos"
-                name="apellidos"
-                #apellidos="ngModel"
-                required
-                minlength="2"
-                maxlength="80"
-                class="field-input"
-                placeholder="Ej. García López"
-              />
+              <input id="apellidos" type="text" [(ngModel)]="usuario.apellidos" name="apellidos"
+                #apellidos="ngModel" required minlength="2" maxlength="80"
+                class="field-input" placeholder="Ej. García López" />
               <span class="input-border"></span>
             </div>
             <div class="error-msg" *ngIf="apellidos.invalid && apellidos.touched">
@@ -104,23 +89,13 @@
           </div>
         </div>
 
-        <!-- Row: Correo (full width) -->
         <div class="form-group full-width" [class.has-error]="correo.invalid && correo.touched">
           <label class="field-label" for="correo">
             <span class="label-dot"></span>Correo electrónico
           </label>
           <div class="input-wrapper">
-            <input
-              id="correo"
-              type="email"
-              [(ngModel)]="usuario.correo"
-              name="correo"
-              #correo="ngModel"
-              required
-              email
-              class="field-input"
-              placeholder="usuario@ejemplo.com"
-            />
+            <input id="correo" type="email" [(ngModel)]="usuario.correo" name="correo"
+              #correo="ngModel" required email class="field-input" placeholder="usuario@ejemplo.com" />
             <span class="input-border"></span>
             <span class="input-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -135,29 +110,19 @@
           </div>
         </div>
 
-        <!-- Row: Contraseña + Confirmar -->
         <div class="form-row">
-          <div class="form-group" [class.has-error]="(password.invalid && password.touched)">
+          <div class="form-group" [class.has-error]="password.invalid && password.touched">
             <label class="field-label" for="password">
               <span class="label-dot"></span>Contraseña
             </label>
             <div class="input-wrapper">
-              <input
-                id="password"
-                [type]="showPassword ? 'text' : 'password'"
-                [(ngModel)]="usuario.password"
-                name="password"
-                #password="ngModel"
-                required
-                minlength="6"
-                class="field-input"
-                placeholder="Mínimo 6 caracteres"
-              />
+              <input id="password" [type]="showPassword ? 'text' : 'password'"
+                [(ngModel)]="usuario.password" name="password" #password="ngModel"
+                required minlength="6" class="field-input" placeholder="Mínimo 6 caracteres" />
               <span class="input-border"></span>
               <button type="button" class="toggle-pass" (click)="showPassword = !showPassword">
                 <svg *ngIf="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
                 <svg *ngIf="showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
@@ -177,21 +142,13 @@
               <span class="label-dot"></span>Confirmar contraseña
             </label>
             <div class="input-wrapper">
-              <input
-                id="confirmPassword"
-                [type]="showConfirm ? 'text' : 'password'"
-                [(ngModel)]="usuario.confirmPassword"
-                name="confirmPassword"
-                #confirmPassword="ngModel"
-                required
-                class="field-input"
-                placeholder="Repite la contraseña"
-              />
+              <input id="confirmPassword" [type]="showConfirm ? 'text' : 'password'"
+                [(ngModel)]="usuario.confirmPassword" name="confirmPassword"
+                #confirmPassword="ngModel" required class="field-input" placeholder="Repite la contraseña" />
               <span class="input-border"></span>
               <button type="button" class="toggle-pass" (click)="showConfirm = !showConfirm">
                 <svg *ngIf="!showConfirm" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
                 <svg *ngIf="showConfirm" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
@@ -206,11 +163,8 @@
           </div>
         </div>
 
-        <!-- Row: Rol (Radio buttons) -->
         <div class="form-group full-width">
-          <label class="field-label">
-            <span class="label-dot"></span>Rol del usuario
-          </label>
+          <label class="field-label"><span class="label-dot"></span>Rol del usuario</label>
           <div class="radio-group">
             <label class="radio-card" [class.selected]="usuario.rol === 'Admin'">
               <input type="radio" [(ngModel)]="usuario.rol" name="rol" value="Admin" class="hidden-radio" />
@@ -226,7 +180,6 @@
                 </svg>
               </span>
             </label>
-
             <label class="radio-card" [class.selected]="usuario.rol === 'Usuario'">
               <input type="radio" [(ngModel)]="usuario.rol" name="rol" value="Usuario" class="hidden-radio" />
               <span class="radio-icon">
@@ -243,27 +196,15 @@
               </span>
             </label>
           </div>
-          <div class="error-msg" *ngIf="!usuario.rol && formSubmitted">
-            Debes seleccionar un rol
-          </div>
+          <div class="error-msg" *ngIf="!usuario.rol && formSubmitted">Debes seleccionar un rol</div>
         </div>
 
-        <!-- Row: Plantel (Select) -->
         <div class="form-group full-width" [class.has-error]="!usuario.id_plantel && formSubmitted">
-          <label class="field-label" for="plantel">
-            <span class="label-dot"></span>Plantel
-          </label>
+          <label class="field-label" for="plantel"><span class="label-dot"></span>Plantel</label>
           <div class="select-wrapper">
-            <select
-              id="plantel"
-              [(ngModel)]="usuario.id_plantel"
-              name="id_plantel"
-              class="field-select"
-            >
+            <select id="plantel" [(ngModel)]="usuario.id_plantel" name="id_plantel" class="field-select">
               <option value="">— Seleccionar plantel —</option>
-              <option *ngFor="let p of listaPlanteles" [value]="p.id_plantel">
-                {{ p.nombre }}
-              </option>
+              <option *ngFor="let p of listaPlanteles" [value]="p.id_plantel">{{ p.nombre }}</option>
             </select>
             <span class="select-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -271,12 +212,9 @@
               </svg>
             </span>
           </div>
-          <div class="error-msg" *ngIf="!usuario.id_plantel && formSubmitted">
-            Debes seleccionar un plantel
-          </div>
+          <div class="error-msg" *ngIf="!usuario.id_plantel && formSubmitted">Debes seleccionar un plantel</div>
         </div>
 
-        <!-- Alerts -->
         <div class="alert alert-success" *ngIf="mensaje">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -294,7 +232,6 @@
           {{ mensajeError }}
         </div>
 
-        <!-- Actions -->
         <div class="form-actions">
           <a routerLink="/usuarios" class="btn-cancel">Cancelar</a>
           <button type="submit" class="btn-submit" [class.loading]="isLoading">
@@ -312,5 +249,45 @@
 
       </form>
     </div>
+  </div>
+</div>
+
+<!-- OVERLAY + MODAL SELECTOR DE AVATAR -->
+<div class="overlay" *ngIf="modalAvatarAbierto" (click)="cerrarSelectorAvatar()"></div>
+
+<div class="modal modal-avatar" *ngIf="modalAvatarAbierto">
+  <div class="modal-header">
+    <h2>Selecciona un avatar</h2>
+    <button class="modal-close" (click)="cerrarSelectorAvatar()">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="loader-wrap" *ngIf="cargandoAvatares">
+      <div class="spinner"></div>
+      <p>Cargando avatares...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargandoAvatares && avatares.length === 0">
+      <p>No hay avatares disponibles. Agrega imágenes a <code>imagenes/avatares/</code>.</p>
+    </div>
+
+    <div class="avatar-grid" *ngIf="!cargandoAvatares && avatares.length > 0">
+      <div class="avatar-opcion"
+           *ngFor="let av of avatares"
+           [class.avatar-opcion--activo]="av === avatarTemporal"
+           (click)="avatarTemporal = av">
+        <img [src]="getUrlAvatar(av)" [alt]="av"
+             onerror="this.src='assets/default-avatar.png'" />
+        <div class="avatar-opcion__check" *ngIf="av === avatarTemporal">✓</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-cancel" style="cursor:pointer;" (click)="cerrarSelectorAvatar()">Cancelar</button>
+    <button class="btn-submit" style="padding:10px 24px;" (click)="confirmarAvatar()"
+            [disabled]="!avatarTemporal">
+      Confirmar
+    </button>
   </div>
 </div>

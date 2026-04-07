@@ -15,7 +15,14 @@
       <p class="page-label">Sistema de Inventario · Universidad</p>
       <h1 class="page-title">Gestión de Productos</h1>
     </div>
-    <button class="btn btn-primary" (click)="abrirCrear()">+ Nuevo Producto</button>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-danger" (click)="abrirSalidas()">↓ Registrar Salidas</button>
+      <button class="btn btn-warning" (click)="modalSolicitudesAtendidas = true"
+        *ngIf="solicitudesAtendidas.length > 0">
+        📋 Solicitudes atendidas ({{ solicitudesAtendidas.length }})
+      </button>
+      <button class="btn btn-primary" (click)="abrirCrear()">+ Nuevo Producto</button>
+    </div>
   </div>
 
   <!-- ESTADÍSTICAS -->
@@ -37,13 +44,8 @@
   <!-- BÚSQUEDA -->
   <div class="search-bar">
     <span class="search-icon">🔍</span>
-    <input
-      type="text"
-      class="search-input"
-      placeholder="Buscar por nombre, serie o modelo..."
-      [(ngModel)]="busqueda"
-      (ngModelChange)="filtrar()"
-    />
+    <input type="text" class="search-input" placeholder="Buscar por nombre, serie o modelo..." [(ngModel)]="busqueda"
+      (ngModelChange)="filtrar()" />
   </div>
 
   <!-- ERROR GLOBAL -->
@@ -96,9 +98,9 @@
           </td>
           <td>
             <div class="acciones">
-              <button class="icon-btn icon-btn--blue"  title="Ajustar existencias" (click)="abrirCantidad(p)">±</button>
-              <button class="icon-btn icon-btn--green" title="Editar"              (click)="abrirEditar(p)">✎</button>
-              <button class="icon-btn icon-btn--red"   title="Eliminar"            (click)="abrirEliminar(p)">✕</button>
+              <button class="icon-btn icon-btn--blue" title="Ajustar existencias" (click)="abrirCantidad(p)">±</button>
+              <button class="icon-btn icon-btn--green" title="Editar" (click)="abrirEditar(p)">✎</button>
+              <button class="icon-btn icon-btn--red" title="Eliminar" (click)="abrirEliminar(p)">✕</button>
             </div>
           </td>
         </tr>
@@ -154,11 +156,8 @@
       <!-- PLANTEL: solo lectura si el usuario ya tiene plantel asignado -->
       <div class="field">
         <label>Plantel *</label>
-        <select
-          [(ngModel)]="formCrear.id_plantel"
-          (ngModelChange)="cargarDepartamentos($event)"
-          [disabled]="plantelUsuario > 0"
-        >
+        <select [(ngModel)]="formCrear.id_plantel" (ngModelChange)="cargarDepartamentos($event)"
+          [disabled]="plantelUsuario > 0">
           <option [ngValue]="0" disabled>— Selecciona un plantel —</option>
           <option *ngFor="let pl of planteles" [ngValue]="pl.id_plantel">
             {{ pl.nombre }}
@@ -172,10 +171,7 @@
       <!-- DEPARTAMENTO: se habilita al seleccionar plantel -->
       <div class="field">
         <label>Departamento *</label>
-        <select
-          [(ngModel)]="formCrear.id_departamento"
-          [disabled]="departamentos.length === 0"
-        >
+        <select [(ngModel)]="formCrear.id_departamento" [disabled]="departamentos.length === 0">
           <option [ngValue]="0" disabled>
             {{ departamentos.length === 0 ? '— Primero selecciona un plantel —' : '— Selecciona un departamento —' }}
           </option>
@@ -231,11 +227,8 @@
       <!-- PLANTEL: bloqueado si el usuario tiene plantel fijo -->
       <div class="field">
         <label>Plantel</label>
-        <select
-          [(ngModel)]="formEditar.id_plantel"
-          (ngModelChange)="cargarDepartamentos($event)"
-          [disabled]="plantelUsuario > 0"
-        >
+        <select [(ngModel)]="formEditar.id_plantel" (ngModelChange)="cargarDepartamentos($event)"
+          [disabled]="plantelUsuario > 0">
           <option [ngValue]="0" disabled>— Selecciona un plantel —</option>
           <option *ngFor="let pl of planteles" [ngValue]="pl.id_plantel">
             {{ pl.nombre }}
@@ -246,10 +239,7 @@
       <!-- DEPARTAMENTO -->
       <div class="field">
         <label>Departamento</label>
-        <select
-          [(ngModel)]="formEditar.id_departamento"
-          [disabled]="departamentos.length === 0"
-        >
+        <select [(ngModel)]="formEditar.id_departamento" [disabled]="departamentos.length === 0">
           <option [ngValue]="0" disabled>— Selecciona un departamento —</option>
           <option *ngFor="let d of departamentos" [ngValue]="d.id_departamento">
             {{ d.nombre }}
@@ -279,7 +269,7 @@
 
   <div class="modal-body">
     <p class="stock-info">
-      Producto: <strong>{{ productoSeleccionado?.nombre }}</strong><br/>
+      Producto: <strong>{{ productoSeleccionado?.nombre }}</strong><br />
       Stock actual:
       <span class="badge" [ngClass]="getStockClass(productoSeleccionado?.cantidad ?? 0)">
         {{ productoSeleccionado?.cantidad }}
@@ -287,10 +277,10 @@
     </p>
 
     <div class="toggle-group">
-      <button [class.active]="formCantidad.operacion === 'agregar'"
-              (click)="formCantidad.operacion = 'agregar'">+ Agregar</button>
-      <button [class.active]="formCantidad.operacion === 'restar'"
-              (click)="formCantidad.operacion = 'restar'">− Restar</button>
+      <button [class.active]="formCantidad.operacion === 'agregar'" (click)="formCantidad.operacion = 'agregar'">+
+        Agregar</button>
+      <button [class.active]="formCantidad.operacion === 'restar'" (click)="formCantidad.operacion = 'restar'">−
+        Restar</button>
     </div>
 
     <div class="field">
@@ -329,5 +319,180 @@
     <button class="btn btn-danger" (click)="confirmarEliminar()" [disabled]="modalCargando">
       {{ modalCargando ? 'Eliminando...' : 'Sí, eliminar' }}
     </button>
+  </div>
+</div>
+
+<!-- Agrega esto al final de producto.component.html, antes del cierre -->
+
+<!-- MODAL: SALIDAS MÚLTIPLES -->
+<div class="overlay" *ngIf="modalSalidas" (click)="cerrarSalidas()"></div>
+
+<div class="modal-salidas" *ngIf="modalSalidas">
+  <div class="modal-header modal-header--salida">
+    <h2>↓ Registrar Salidas</h2>
+    <button class="modal-close" (click)="cerrarSalidas()">✕</button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+
+  <div class="modal-body">
+
+    <!-- FILA 1: Plantel destino + Departamento destino -->
+    <div class="form-grid" style="margin-bottom:16px;">
+
+      <div class="field">
+        <label>Plantel destino *</label>
+        <select [(ngModel)]="salidaPlantelDestino" (ngModelChange)="onPlantelDestinoChange($event)">
+          <option [ngValue]="0" disabled>— Selecciona plantel —</option>
+          <option *ngFor="let pl of planteles" [ngValue]="pl.id_plantel">
+            {{ pl.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Departamento destino *</label>
+        <select [(ngModel)]="salidaDeptDestino" [disabled]="deptosDestino.length === 0">
+          <option [ngValue]="0" disabled>
+            {{ deptosDestino.length === 0 ? '— Primero selecciona plantel —' : '— Selecciona departamento —' }}
+          </option>
+          <option *ngFor="let d of deptosDestino" [ngValue]="d.id_departamento">
+            {{ d.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field field-full">
+        <label>Nota (opcional)</label>
+        <input type="text" placeholder="Ej. Préstamo sala de cómputo..." [(ngModel)]="notaSalida" />
+      </div>
+
+    </div>
+
+    <!-- BUSCADOR -->
+    <div class="search-bar" style="margin-bottom:12px;">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" placeholder="Buscar producto por nombre, serie o modelo..."
+        [(ngModel)]="busquedaSalida" (ngModelChange)="filtrarParaSalida()" />
+    </div>
+
+    <!-- LISTA DE PRODUCTOS DISPONIBLES -->
+    <div class="salida-lista" *ngIf="productosSalidaFiltrados.length > 0">
+      <div class="salida-item" *ngFor="let p of productosSalidaFiltrados" (click)="agregarASalida(p)">
+        <div class="salida-item__info">
+          <span class="salida-item__nombre">{{ p.nombre }}</span>
+          <div class="salida-item__chips">
+            <span class="salida-chip" *ngIf="p.descripcion">{{ p.descripcion }}</span>
+            <span class="salida-chip salida-chip--mono">Serie: {{ p.num_serie }}</span>
+            <span class="salida-chip" *ngIf="p.modelo">Modelo: {{ p.modelo }}</span>
+          </div>
+        </div>
+        <span class="badge" [ngClass]="getStockClass(p.cantidad)">Stock: {{ p.cantidad }}</span>
+        <span class="salida-item__add">+ Agregar</span>
+      </div>
+    </div>
+
+    <div class="salida-vacia" *ngIf="busquedaSalida && productosSalidaFiltrados.length === 0">
+      No se encontraron productos disponibles.
+    </div>
+
+    <!-- TABLA DE PRODUCTOS SELECCIONADOS -->
+    <div class="salida-seleccionados" *ngIf="productosSalida.length > 0">
+      <h3 class="salida-titulo">Productos a dar de salida ({{ productosSalida.length }})</h3>
+
+      <table class="tabla tabla-sm">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Modelo</th>
+            <th>N° Serie</th>
+            <th>Disponible</th>
+            <th>Cantidad</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of productosSalida; let i = index"
+            [class.fila-error]="s.cantidad > s.producto.cantidad || s.cantidad < 1">
+            <td><strong>{{ s.producto.nombre }}</strong></td>
+            <td><small>{{ s.producto.descripcion || '—' }}</small></td>
+            <td>{{ s.producto.modelo || '—' }}</td>
+            <td class="td-mono">{{ s.producto.num_serie }}</td>
+            <td>
+              <span class="badge" [ngClass]="getStockClass(s.producto.cantidad)">
+                {{ s.producto.cantidad }}
+              </span>
+            </td>
+            <td>
+              <input class="input-cantidad" type="number" min="1" [max]="s.producto.cantidad"
+                [(ngModel)]="s.cantidad" />
+            </td>
+            <td>
+              <button class="icon-btn icon-btn--red" title="Quitar" (click)="quitarDeSalida(i)">✕</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="salida-vacia" *ngIf="productosSalida.length === 0 && !busquedaSalida">
+      Busca y selecciona los productos que deseas dar de salida.
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <span class="footer-info" *ngIf="productosSalida.length > 0">
+      {{ productosSalida.length }} producto{{ productosSalida.length !== 1 ? 's' : '' }} seleccionado{{
+      productosSalida.length !== 1 ? 's' : '' }}
+    </span>
+    <button class="btn btn-ghost" (click)="cerrarSalidas()">Cancelar</button>
+    <button class="btn btn-danger" (click)="confirmarSalidas()"
+      [disabled]="productosSalida.length === 0 || modalCargando">
+      {{ modalCargando ? 'Procesando...' : '↓ Confirmar Salidas' }}
+    </button>
+  </div>
+</div>
+
+<!-- OVERLAY solicitudes atendidas -->
+<div class="overlay" *ngIf="modalSolicitudesAtendidas" 
+     (click)="modalSolicitudesAtendidas = false"></div>
+
+<!-- MODAL: SOLICITUDES ATENDIDAS -->
+<div class="modal" *ngIf="modalSolicitudesAtendidas">
+  <div class="modal-header">
+    <h2>📋 Solicitudes Atendidas</h2>
+    <button class="modal-close" (click)="modalSolicitudesAtendidas = false">✕</button>
+  </div>
+  <div class="modal-body">
+    <p style="margin-bottom:12px; opacity:.7; font-size:13px;">
+      Selecciona una solicitud para autocompletar el formulario de nuevo producto.
+    </p>
+    <table class="tabla tabla-sm">
+      <thead>
+        <tr>
+          <th>#</th><th>Producto</th><th>Modelo</th>
+          <th>Cantidad</th><th>Descripción</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of solicitudesAtendidas">
+          <td class="td-id">{{ s.id_solicitud }}</td>
+          <td><strong>{{ s.nombre }}</strong></td>
+          <td>{{ s.modelo || '—' }}</td>
+          <td class="td-center">{{ s.cantidad }}</td>
+          <td><small>{{ s.descripcion || '—' }}</small></td>
+          <td>
+            <button class="btn btn-primary btn-sm" (click)="seleccionarSolicitud(s)">
+              ✅ Usar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" (click)="modalSolicitudesAtendidas = false">Cerrar</button>
   </div>
 </div>

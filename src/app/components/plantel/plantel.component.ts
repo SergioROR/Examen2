@@ -1,53 +1,132 @@
-import { Component, OnInit } from '@angular/core';
-import { PlantelService } from '../../plantel/plantel.service';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { PlantelService } from '../../plantel/plantel.service';
+import { Plantel, DetallePlantel } from '../../plantel/plantel';
 
 @Component({
   selector: 'app-plantel',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './plantel.component.html',
-  styleUrl: './plantel.component.css'
+  styleUrls: ['./plantel.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
-export class PlantelComponent implements OnInit {
-  listaPlanteles: any[] = [];
-  listaPlantelesFiltrada: any[] = [];  // ← esta es la que usaremos en el HTML
-  terminoBusqueda: string = '';
-  readonly URL_API = 'http://localhost:3005/imagenes/';
+export class PlantelComponent implements OnInit, OnDestroy {
 
-  constructor(
-    private ServicioPlanteles: PlantelService,
-    private modalService: NgbModal
-  ) {}
+  listaPlanteles:        Plantel[] = [];
+  listaPlantelesFiltrada: Plantel[] = [];
+  terminoBusqueda = '';
+  cargando        = false;
+  errorMsg        = '';
+  successMsg      = '';
 
-  ngOnInit() {
-    this.ServicioPlanteles.VerPlanteles().subscribe({
-      next: (planteles) => {
-        this.listaPlanteles = planteles;
-        this.listaPlantelesFiltrada = [...planteles];  // ← inicializa la lista filtrada con TODOS los planteles
-      },
-      error: (err) => {
-        console.error('Error al cargar planteles', err);
-      }
-    });
+  // ── Modal detalle ────────────────────────────────────────
+  modalDetalle      = false;
+  detalle:          DetallePlantel | null = null;
+  cargandoDetalle   = false;
+  tabActiva:        'inventario' | 'usuarios' = 'inventario';
+  hacerPrincipalCargando = false;
+
+  readonly URL_IMG = 'http://localhost:3005/imagenes/';
+  readonly URL_AVT = 'http://localhost:3005/imagenes/avatares/';
+
+  private destroy$  = new Subject<void>();
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(private svc: PlantelService) {}
+
+  ngOnInit(): void { this.cargarPlanteles(); }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
   }
 
-  // Renombré el método para que sea más claro (antes era filtrarUsuarios)
-  filtrarPlanteles() {
-    const termino = this.terminoBusqueda.toLowerCase().trim();
+  // ── Carga ────────────────────────────────────────────────
 
-    // Si no hay término de búsqueda, muestra todos
-    if (!termino) {
-      this.listaPlantelesFiltrada = [...this.listaPlanteles];
-      return;
-    }
+  cargarPlanteles(): void {
+    this.cargando = true;
+    this.svc.VerPlanteles()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          // Ordenar: principal primero
+          this.listaPlanteles = data.sort((a, b) =>
+            (b.es_principal ? 1 : 0) - (a.es_principal ? 1 : 0)
+          );
+          this.listaPlantelesFiltrada = [...this.listaPlanteles];
+          this.cargando = false;
+        },
+        error: () => { this.errorMsg = 'Error al cargar planteles'; this.cargando = false; }
+      });
+  }
 
-    // Filtra por nombre del plantel
-    this.listaPlantelesFiltrada = this.listaPlanteles.filter(plantel =>
-      plantel.nombre?.toLowerCase().includes(termino)
-    );
+  filtrarPlanteles(): void {
+    const t = this.terminoBusqueda.toLowerCase().trim();
+    this.listaPlantelesFiltrada = t
+      ? this.listaPlanteles.filter(p => p.nombre.toLowerCase().includes(t))
+      : [...this.listaPlanteles];
+  }
+
+  // ── Modal detalle ────────────────────────────────────────
+
+  verDetalle(p: Plantel): void {
+    this.detalle        = null;
+    this.cargandoDetalle = true;
+    this.tabActiva      = 'inventario';
+    this.modalDetalle   = true;
+    this.errorMsg       = '';
+
+    this.svc.VerDetalle(p.id_plantel)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (d) => { this.detalle = d; this.cargandoDetalle = false; },
+        error: ()  => { this.cargandoDetalle = false; this.errorMsg = 'Error al cargar detalle'; }
+      });
+  }
+
+  cerrarDetalle(): void {
+    this.modalDetalle = false;
+    this.detalle      = null;
+  }
+
+  // ── Hacer principal ──────────────────────────────────────
+
+  hacerPrincipal(id: number): void {
+    this.hacerPrincipalCargando = true;
+    this.svc.HacerPrincipal(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.hacerPrincipalCargando = false;
+          this.cerrarDetalle();
+          this.toast(res.mensaje);
+          this.cargarPlanteles();
+        },
+        error: () => {
+          this.hacerPrincipalCargando = false;
+          this.errorMsg = 'Error al cambiar plantel principal';
+        }
+      });
+  }
+
+  // ── UI ───────────────────────────────────────────────────
+
+  getStockClass(cantidad: number): string {
+    if (cantidad === 0) return 'stock-empty';
+    if (cantidad <= 5)  return 'stock-low';
+    if (cantidad <= 15) return 'stock-mid';
+    return 'stock-ok';
+  }
+
+  toast(msg: string): void {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.successMsg = msg;
+    this.toastTimer = setTimeout(() => this.successMsg = '', 3500);
   }
 }

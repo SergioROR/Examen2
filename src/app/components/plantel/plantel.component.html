@@ -1,49 +1,197 @@
-<!-- Barra superior con buscador y botón -->
-<div class="top-bar">
-  <div class="input-group input-group-lg" style="max-width: 500px;">
-    <span class="input-group-text bg-white border-end-0">
-      <i class="bi bi-search text-muted"></i>
-    </span>
-    <input 
-      type="text" 
-      class="form-control border-start-0 rounded-end" 
-      placeholder="Buscar por nombre del plantel" 
-      [(ngModel)]="terminoBusqueda" 
-      (ngModelChange)="filtrarPlanteles()"
-    >
+<!-- TOAST -->
+<div class="pl-toast" [class.pl-toast--visible]="successMsg">✓ {{ successMsg }}</div>
+<div class="pl-overlay" *ngIf="modalDetalle" (click)="cerrarDetalle()"></div>
+
+<div class="pl-page">
+
+  <!-- HEADER -->
+  <div class="pl-header">
+    <div>
+      <p class="pl-label">Sistema de Inventario · Universidad</p>
+      <h1 class="pl-title">Planteles</h1>
+      <p class="pl-sub">Gestiona los planteles y su inventario</p>
+    </div>
+    <button class="pl-btn-new" [routerLink]="['/crearPlantel']">
+      + Nuevo Plantel
+    </button>
   </div>
 
-  <button class="btn-glass" type="button" [routerLink]="['/crearPlantel']">
-    <span class="btn-content">
-      <i class="plus-icon">+</i>
-      Crear Plantel
-    </span>
-  </button>
+  <!-- SEARCH -->
+  <div class="pl-search-bar">
+    <span class="pl-search-icon">🔍</span>
+    <input type="text" class="pl-search-input"
+           placeholder="Buscar plantel por nombre..."
+           [(ngModel)]="terminoBusqueda"
+           (ngModelChange)="filtrarPlanteles()" />
+  </div>
+
+  <!-- ERROR -->
+  <div class="pl-alert" *ngIf="errorMsg">
+    ⚠ {{ errorMsg }}
+    <button (click)="errorMsg = ''">✕</button>
+  </div>
+
+  <!-- LOADER -->
+  <div class="pl-loader" *ngIf="cargando">
+    <div class="pl-spinner"></div>
+    <p>Cargando planteles...</p>
+  </div>
+
+  <!-- EMPTY -->
+  <div class="pl-empty" *ngIf="!cargando && listaPlantelesFiltrada.length === 0">
+    <p>🏫 No se encontraron planteles.</p>
+  </div>
+
+  <!-- GRID DE TARJETAS -->
+  <div class="pl-grid" *ngIf="!cargando && listaPlantelesFiltrada.length > 0">
+    <div class="pl-card"
+         *ngFor="let p of listaPlantelesFiltrada"
+         [class.pl-card--principal]="p.es_principal"
+         (click)="verDetalle(p)">
+
+      <!-- Badge principal -->
+      <div class="pl-card-badge" *ngIf="p.es_principal">
+        ⭐ Principal
+      </div>
+
+      <!-- Imagen -->
+      <div class="pl-card-img">
+        <img [src]="p.imagen ? (URL_IMG + p.imagen) : 'assets/no-image.png'"
+             [alt]="p.nombre"
+             onerror="this.src='assets/no-image.png'">
+        <div class="pl-card-overlay">
+          <span>Ver detalle →</span>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="pl-card-info">
+        <div class="pl-card-dot" [class.pl-card-dot--principal]="p.es_principal"></div>
+        <div>
+          <h3 class="pl-card-name">{{ p.nombre }}</h3>
+          <p class="pl-card-sub">{{ p.es_principal ? 'Plantel principal' : 'Plantel disponible' }}</p>
+        </div>
+        <span class="pl-card-arrow">→</span>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
-<!-- Contenedor de tarjetas -->
-<div class="planteles-container">
-  <!-- Mensaje si no hay resultados -->
-  <div *ngIf="listaPlantelesFiltrada.length === 0" class="text-center py-5 text-muted">
-    <h4>No se encontraron planteles</h4>
-    <p>Intenta con otro término de búsqueda o crea uno nuevo.</p>
-  </div>
+<!-- ═══════════════════════════════════════
+     MODAL DETALLE PLANTEL
+═══════════════════════════════════════ -->
+<div class="pl-modal" *ngIf="modalDetalle">
 
-  <!-- Tarjetas filtradas -->
-  <div class="plantel-card" *ngFor="let plantel of listaPlantelesFiltrada">
-    <div class="card-image">
-      <img 
-        [src]="plantel.imagen ? (URL_API + plantel.imagen) : 'assets/no-image.png'" 
-        alt="{{ plantel.nombre }}"
-        style="display: block; width: 100%; height: 100%; object-fit: cover;"
-      >
-    </div>
-
-    <div class="card-info" style="padding: 15px; background: #222;">
-      <h3 style="color: #0ef !important; margin: 0; display: block;">
-        {{ plantel.nombre | uppercase }}
-      </h3>
-      <small style="color: #ccc;">Plantel disponible</small>
+  <!-- Header con imagen de fondo -->
+  <div class="pl-modal-header"
+       [style.backgroundImage]="detalle?.plantel?.imagen
+         ? 'url(' + URL_IMG + detalle?.plantel?.imagen + ')'
+         : 'none'">
+    <div class="pl-modal-header-overlay">
+      <div class="pl-modal-header-info">
+        <div class="pl-modal-badge" *ngIf="detalle?.plantel?.es_principal">⭐ Plantel Principal</div>
+        <h2>{{ detalle?.plantel?.nombre }}</h2>
+        <p>{{ detalle?.productos?.length }} productos · {{ detalle?.usuarios?.length }} usuarios</p>
+      </div>
+      <button class="pl-modal-close" (click)="cerrarDetalle()">✕</button>
     </div>
   </div>
+
+  <!-- Loader -->
+  <div class="pl-loader pl-loader--modal" *ngIf="cargandoDetalle">
+    <div class="pl-spinner"></div>
+  </div>
+
+  <ng-container *ngIf="!cargandoDetalle && detalle">
+
+    <!-- Tabs -->
+    <div class="pl-tabs">
+      <button class="pl-tab" [class.pl-tab--active]="tabActiva === 'inventario'"
+              (click)="tabActiva = 'inventario'">
+        📦 Inventario ({{ detalle.productos.length }})
+      </button>
+      <button class="pl-tab" [class.pl-tab--active]="tabActiva === 'usuarios'"
+              (click)="tabActiva = 'usuarios'">
+        👤 Usuarios ({{ detalle.usuarios.length }})
+      </button>
+    </div>
+
+    <!-- TAB: INVENTARIO -->
+    <div class="pl-modal-body" *ngIf="tabActiva === 'inventario'">
+      <div class="pl-empty-tab" *ngIf="detalle.productos.length === 0">
+        📦 Este plantel no tiene productos en inventario.
+      </div>
+      <table class="pl-tabla" *ngIf="detalle.productos.length > 0">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Modelo</th>
+            <th>N° Serie</th>
+            <th>Departamento</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of detalle.productos">
+            <td><strong>{{ p.nombre }}</strong><br><small>{{ p.descripcion }}</small></td>
+            <td>{{ p.modelo || '—' }}</td>
+            <td style="font-family:monospace;font-size:12px">{{ p.num_serie }}</td>
+            <td>{{ p.departamento }}</td>
+            <td>
+              <span class="pl-stock" [ngClass]="getStockClass(p.cantidad)">
+                {{ p.cantidad }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB: USUARIOS -->
+    <div class="pl-modal-body" *ngIf="tabActiva === 'usuarios'">
+      <div class="pl-empty-tab" *ngIf="detalle.usuarios.length === 0">
+        👤 No hay usuarios asignados a este plantel.
+      </div>
+      <div class="pl-usuarios-grid" *ngIf="detalle.usuarios.length > 0">
+        <div class="pl-usuario-card" *ngFor="let u of detalle.usuarios">
+          <div class="pl-usuario-avatar">
+            <img *ngIf="u.imagen"
+                 [src]="URL_AVT + u.imagen"
+                 [alt]="u.nombre"
+                 onerror="this.style.display='none'">
+            <span *ngIf="!u.imagen">{{ u.nombre.charAt(0) }}</span>
+          </div>
+          <div class="pl-usuario-info">
+            <span class="pl-usuario-nombre">{{ u.nombre }} {{ u.apellidos }}</span>
+            <span class="pl-usuario-correo">{{ u.correo }}</span>
+            <div class="pl-usuario-footer">
+              <span class="pl-rol" [class.pl-rol--admin]="u.rol === 'Admin'">
+                {{ u.rol }}
+              </span>
+              <span class="pl-estado" [class.pl-estado--off]="!u.estado">
+                {{ u.estado ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="pl-modal-footer">
+      <button class="pl-btn pl-btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+      <button class="pl-btn pl-btn-principal"
+              *ngIf="!detalle.plantel.es_principal"
+              [disabled]="hacerPrincipalCargando"
+              (click)="hacerPrincipal(detalle.plantel.id_plantel)">
+        {{ hacerPrincipalCargando ? 'Procesando...' : '⭐ Hacer principal' }}
+      </button>
+      <span class="pl-principal-label" *ngIf="detalle.plantel.es_principal">
+        ⭐ Este es el plantel principal
+      </span>
+    </div>
+
+  </ng-container>
 </div>

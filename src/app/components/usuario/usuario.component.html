@@ -1,3 +1,6 @@
+<!-- overlay para modal editar -->
+<div class="overlay-editar" *ngIf="modalEditarAbierto" (click)="cerrarEditar()"></div>
+
 <div class="container pt-4 pb-5">
   <div class="row justify-content-center">
     <div class="col-xl-11 col-lg-11 col-md-12 col-12">
@@ -7,17 +10,11 @@
           <span class="input-group-text bg-white border-end-0">
             <i class="bi bi-search text-muted"></i>
           </span>
-          <input 
-            type="text" 
-            class="form-control border-start-0 rounded-end" 
-            placeholder="Buscar por nombre, apellidos o correo" 
-            [(ngModel)]="terminoBusqueda" 
-            (ngModelChange)="filtrarUsuarios()"
-          >
+          <input type="text" class="form-control border-start-0 rounded-end"
+            placeholder="Buscar por nombre, apellidos o correo"
+            [(ngModel)]="terminoBusqueda" (ngModelChange)="filtrarUsuarios()">
         </div>
-
-        <button 
-          class="btn btn-primary btn-lg rounded-pill px-4 fw-semibold shadow-sm" 
+        <button class="btn btn-primary btn-lg rounded-pill px-4 fw-semibold shadow-sm"
           [routerLink]="['/crearUsuarios']">
           <i class="bi bi-person-plus me-2"></i> Crear Usuario
         </button>
@@ -27,58 +24,84 @@
         <div class="card-body p-0">
 
           <ul class="nav nav-tabs nav-fill border-bottom-0 bg-light" id="userTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active fw-semibold py-3" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
-                Usuarios Activos
-              </button>
+            <li class="nav-item">
+              <button class="nav-link active fw-semibold py-3" data-bs-toggle="tab"
+                data-bs-target="#activos" type="button">Usuarios Activos</button>
             </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link fw-semibold py-3" id="inactivos-tab" data-bs-toggle="tab" data-bs-target="#inactivos" type="button" role="tab" aria-controls="inactivos" aria-selected="false">
-                Usuarios Inactivos
-              </button>
+            <li class="nav-item">
+              <button class="nav-link fw-semibold py-3" data-bs-toggle="tab"
+                data-bs-target="#inactivos" type="button">Usuarios Inactivos</button>
             </li>
           </ul>
 
           <div class="tab-content p-4 p-md-5">
 
+            <!-- ACTIVOS -->
             <div class="tab-pane fade show active" id="activos" role="tabpanel">
               <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 table-custom">
                   <thead>
                     <tr>
-                      <th class="ps-4 py-3">Nombre</th>
-                      <th class="py-3">Apellidos</th>
+                      <th class="ps-4 py-3">Usuario</th>
                       <th class="py-3">Correo</th>
                       <th class="py-3">Plantel</th>
                       <th class="py-3">Rol</th>
-                      <th class="py-3 text-center">Contraseña</th>
-                      <th class="py-3 text-center">Estado</th>
+                      <th class="py-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr *ngFor="let usuario of listaActivosFiltrada">
-                      <td class="ps-4 fw-medium">{{ usuario.nombre }}</td>
-                      <td>{{ usuario.apellidos }}</td>
+                      <!-- Columna usuario con avatar -->
+                      <td class="ps-4">
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="u-avatar-wrap">
+                            <img *ngIf="usuario.imagen"
+                                 [src]="getAvatarUrl(usuario.imagen)"
+                                 class="u-avatar"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />
+                            <div class="u-avatar-fallback"
+                                 [style.display]="usuario.imagen ? 'none' : 'flex'">
+                              {{ usuario.nombre?.charAt(0)?.toUpperCase() }}
+                            </div>
+                          </div>
+                          <div>
+                            <div class="fw-semibold">{{ usuario.nombre }}</div>
+                            <div class="text-muted small">{{ usuario.apellidos }}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td>{{ usuario.correo }}</td>
                       <td>{{ usuario.plantel || '—' }}</td>
                       <td>
-                        <span class="badge rounded-pill px-3 py-2 fs-6" [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
+                        <span class="badge rounded-pill px-3 py-2"
+                          [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
                           {{ usuario.rol }}
                         </span>
                       </td>
                       <td class="text-center">
-                        <button class="btn btn-sm btn-warning rounded-circle shadow-sm" title="Cambiar contraseña" (click)="abrirModalCambiarContrasena(usuario, cambiarContrasenaModal)">
-                          <i class="bi bi-key-fill"></i>
-                        </button>
-                      </td>
-                      <td class="text-center">
-                        <button class="btn btn-sm btn-danger rounded-circle shadow-sm" title="Inhabilitar" (click)="confirmarInhabilitar(usuario, modalConfirmacion)">
-                          <i class="bi bi-x-lg"></i>
-                        </button>
+                        <div class="d-flex justify-content-center gap-2">
+                          <!-- Editar -->
+                          <button class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm"
+                                  title="Editar usuario" (click)="abrirEditar(usuario)">
+                            <i class="bi bi-pencil-fill"></i>
+                          </button>
+                          <!-- Cambiar contraseña -->
+                          <button class="btn btn-sm btn-warning rounded-circle shadow-sm"
+                                  title="Cambiar contraseña"
+                                  (click)="abrirModalCambiarContrasena(usuario, cambiarContrasenaModal)">
+                            <i class="bi bi-key-fill"></i>
+                          </button>
+                          <!-- Inhabilitar -->
+                          <button class="btn btn-sm btn-danger rounded-circle shadow-sm"
+                                  title="Inhabilitar"
+                                  (click)="confirmarInhabilitar(usuario, modalConfirmacion)">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     <tr *ngIf="listaActivosFiltrada.length === 0">
-                      <td colspan="7" class="text-center py-5 text-muted fst-italic">
+                      <td colspan="5" class="text-center py-5 text-muted fst-italic">
                         No se encontraron usuarios activos.
                       </td>
                     </tr>
@@ -87,13 +110,13 @@
               </div>
             </div>
 
+            <!-- INACTIVOS -->
             <div class="tab-pane fade" id="inactivos" role="tabpanel">
               <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 table-custom">
                   <thead>
                     <tr>
-                      <th class="ps-4 py-3">Nombre</th>
-                      <th class="py-3">Apellidos</th>
+                      <th class="ps-4 py-3">Usuario</th>
                       <th class="py-3">Correo</th>
                       <th class="py-3">Plantel</th>
                       <th class="py-3">Rol</th>
@@ -102,23 +125,42 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let usuario of listaInactivosFiltrada">
-                      <td class="ps-4 fw-medium">{{ usuario.nombre }}</td>
-                      <td>{{ usuario.apellidos }}</td>
+                      <td class="ps-4">
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="u-avatar-wrap">
+                            <img *ngIf="usuario.imagen"
+                                 [src]="getAvatarUrl(usuario.imagen)"
+                                 class="u-avatar"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />
+                            <div class="u-avatar-fallback"
+                                 [style.display]="usuario.imagen ? 'none' : 'flex'">
+                              {{ usuario.nombre?.charAt(0)?.toUpperCase() }}
+                            </div>
+                          </div>
+                          <div>
+                            <div class="fw-semibold">{{ usuario.nombre }}</div>
+                            <div class="text-muted small">{{ usuario.apellidos }}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td>{{ usuario.correo }}</td>
                       <td>{{ usuario.plantel || '—' }}</td>
                       <td>
-                        <span class="badge rounded-pill px-3 py-2 fs-6" [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
+                        <span class="badge rounded-pill px-3 py-2"
+                          [ngClass]="{'bg-primary': usuario.rol === 'Admin', 'bg-success': usuario.rol === 'Usuario'}">
                           {{ usuario.rol }}
                         </span>
                       </td>
                       <td class="text-center">
-                        <button class="btn btn-sm btn-success rounded-circle shadow-sm" title="Habilitar" (click)="confirmarHabilitar(usuario, modalConfirmacion)">
+                        <button class="btn btn-sm btn-success rounded-circle shadow-sm"
+                                title="Habilitar"
+                                (click)="confirmarHabilitar(usuario, modalConfirmacion)">
                           <i class="bi bi-check-lg"></i>
                         </button>
                       </td>
                     </tr>
                     <tr *ngIf="listaInactivosFiltrada.length === 0">
-                      <td colspan="6" class="text-center py-5 text-muted fst-italic">
+                      <td colspan="5" class="text-center py-5 text-muted fst-italic">
                         No se encontraron usuarios inactivos.
                       </td>
                     </tr>
@@ -130,31 +172,191 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
+<!-- ── MODAL EDITAR USUARIO ── -->
+<div class="modal-editar" *ngIf="modalEditarAbierto">
+
+  <!-- Header con gradiente y avatar -->
+  <div class="modal-editar__header">
+    <div class="modal-editar__header-bg"></div>
+    <div class="modal-editar__header-content">
+      <div class="modal-editar__avatar-wrap">
+        <img *ngIf="usuarioSeleccionado?.imagen"
+             [src]="getAvatarUrl(usuarioSeleccionado.imagen)"
+             class="modal-editar__avatar"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />
+        <div class="modal-editar__avatar-fallback"
+             [style.display]="usuarioSeleccionado?.imagen ? 'none' : 'flex'">
+          {{ formEditar.nombre.charAt(0).toUpperCase() }}
+        </div>
+      </div>
+      <div>
+        <h2 class="modal-editar__titulo">Editar Usuario</h2>
+        <p class="modal-editar__sub">{{ formEditar.nombre }} {{ formEditar.apellidos }}</p>
+      </div>
+    </div>
+    <button class="modal-editar__close" (click)="cerrarEditar()">✕</button>
+  </div>
+
+  <!-- Alerta error -->
+  <div class="modal-editar__error" *ngIf="editError">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+    {{ editError }}
+  </div>
+
+  <div class="modal-editar__body">
+
+    <!-- Sección: Información personal -->
+    <div class="edit-section">
+      <div class="edit-section__label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        Información personal
+      </div>
+      <div class="edit-grid-2">
+        <div class="edit-field">
+          <label class="edit-label">Nombre</label>
+          <div class="edit-input-wrap">
+            <input type="text" class="edit-input" [(ngModel)]="formEditar.nombre" placeholder="Nombre" />
+          </div>
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">Apellidos</label>
+          <div class="edit-input-wrap">
+            <input type="text" class="edit-input" [(ngModel)]="formEditar.apellidos" placeholder="Apellidos" />
+          </div>
+        </div>
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">Correo electrónico</label>
+        <div class="edit-input-wrap edit-input-wrap--icon">
+          <svg class="edit-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <input type="email" class="edit-input edit-input--with-icon" [(ngModel)]="formEditar.correo" placeholder="correo@ejemplo.com" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="edit-divider"></div>
+
+    <!-- Sección: Acceso y asignación -->
+    <div class="edit-section">
+      <div class="edit-section__label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Acceso y asignación
+      </div>
+
+      <!-- Rol cards -->
+      <div class="edit-field">
+        <label class="edit-label">Rol del usuario</label>
+        <div class="edit-rol-group">
+          <label class="edit-rol-card" [class.edit-rol-card--active]="formEditar.rol === 'Admin'">
+            <input type="radio" [(ngModel)]="formEditar.rol" value="Admin" class="hidden-radio" />
+            <div class="edit-rol-icon edit-rol-icon--admin">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div class="edit-rol-info">
+              <span class="edit-rol-name">Admin</span>
+              <span class="edit-rol-desc">Acceso total</span>
+            </div>
+            <div class="edit-rol-check" *ngIf="formEditar.rol === 'Admin'">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+          </label>
+
+          <label class="edit-rol-card" [class.edit-rol-card--active]="formEditar.rol === 'Usuario'">
+            <input type="radio" [(ngModel)]="formEditar.rol" value="Usuario" class="hidden-radio" />
+            <div class="edit-rol-icon edit-rol-icon--usuario">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="edit-rol-info">
+              <span class="edit-rol-name">Usuario</span>
+              <span class="edit-rol-desc">Acceso a su plantel</span>
+            </div>
+            <div class="edit-rol-check" *ngIf="formEditar.rol === 'Usuario'">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Plantel -->
+      <div class="edit-field">
+        <label class="edit-label">Plantel asignado</label>
+        <div class="edit-select-wrap">
+          <svg class="edit-select-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <select class="edit-select" [(ngModel)]="formEditar.id_plantel">
+            <option [ngValue]="0" disabled>— Selecciona plantel —</option>
+            <option *ngFor="let p of listaPlanteles" [ngValue]="p.id_plantel">{{ p.nombre }}</option>
+          </select>
+          <svg class="edit-select-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-editar__footer">
+    <button class="edit-btn-cancel" (click)="cerrarEditar()">Cancelar</button>
+    <button class="edit-btn-save" (click)="guardarEdicion()" [disabled]="editCargando">
+      <svg *ngIf="!editCargando" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+      </svg>
+      <span *ngIf="!editCargando">Guardar cambios</span>
+      <span *ngIf="editCargando" class="edit-spinner"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ── MODALES NgbModal ── -->
 <ng-template #cambiarContrasenaModal let-modal>
   <div class="modal-header">
     <h5 class="modal-title">Cambiar contraseña</h5>
-    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Close"></button>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
     <form #formContrasena="ngForm">
       <div class="mb-3">
         <label class="form-label fw-medium">Nueva contraseña</label>
-        <input type="password" class="form-control" [(ngModel)]="nuevaContrasena" name="nuevaContrasena" required minlength="8">
+        <input type="password" class="form-control" [(ngModel)]="nuevaContrasena"
+               name="nuevaContrasena" required minlength="8">
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Confirmar contraseña</label>
-        <input type="password" class="form-control" [(ngModel)]="confirmarContrasena" name="confirmarContrasena" required>
+        <input type="password" class="form-control" [(ngModel)]="confirmarContrasena"
+               name="confirmarContrasena" required>
       </div>
     </form>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="confirmarCambioContrasena(); modal.close()" [disabled]="formContrasena.invalid || nuevaContrasena !== confirmarContrasena">
+    <button class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button class="btn btn-primary"
+            (click)="confirmarCambioContrasena(); modal.close()"
+            [disabled]="nuevaContrasena !== confirmarContrasena || nuevaContrasena.length < 8">
       Aceptar
     </button>
   </div>
@@ -163,15 +365,11 @@
 <ng-template #modalConfirmacion let-modal>
   <div class="modal-header">
     <h5 class="modal-title">Confirmar acción</h5>
-    <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Close"></button>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body">
-    {{ mensajeConfirmacion }}
-  </div>
+  <div class="modal-body">{{ mensajeConfirmacion }}</div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
-    <button type="button" class="btn btn-danger" (click)="accionConfirmada(); modal.close()">
-      Sí, confirmar
-    </button>
+    <button class="btn btn-secondary" (click)="modal.dismiss()">Cancelar</button>
+    <button class="btn btn-danger" (click)="accionConfirmada(); modal.close()">Sí, confirmar</button>
   </div>
 </ng-template>

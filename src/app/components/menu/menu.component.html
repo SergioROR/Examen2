@@ -1,32 +1,51 @@
 <nav class="navbar">
   <div class="nav-logo">
-    <span class="system-name">Sistema de invenvario</span>
+    <span class="system-name">Sistema de inventario</span>
   </div>
 
-  <div class="nav-menu">
-    <a [routerLink]="['/general']"   (click)="setIndex(0)">General</a>
-    <a [routerLink]="['/planteles']" (click)="setIndex(1)">Planteles</a>
-    <a [routerLink]="['/pedidos']"   (click)="setIndex(2)">Pedidos</a>
-    <a [routerLink]="['/productos']"  (click)="setIndex(3)">Inventario</a>
-    <a [routerLink]="['/registros']"   (click)="setIndex(4)">Registros</a>
-    <a [routerLink]="['/usuarios']"  (click)="setIndex(5)">Usuarios</a>
-
-    <!-- 
-      100 / 6 = 16.666666... 
-      Puedes usar 16.6667 o calc(100% / 6)
-    -->
-    <span class="indicator" 
-          [style.left.%]="indexActivo * (100 / 6)">
-    </span>
+  <div class="nav-menu" [style.--total-items]="totalItems">
+    <a [routerLink]="['/general']"      (click)="setIndex(0)">General</a>
+    <a *ngIf="rol === 'Admin'"  [routerLink]="['/planteles']"    (click)="setIndex(1)">Planteles</a>
+    <a *ngIf="rol !== 'Admin'" [routerLink]="['/departamentos']" (click)="setIndex(1)">Departamentos</a>
+    <a *ngIf="rol === 'Admin'"  [routerLink]="['/pedidos-admin']" (click)="setIndex(2)">Pedidos</a>
+    <a *ngIf="rol !== 'Admin'" [routerLink]="['/mis-pedidos']"   (click)="setIndex(2)">Mis Pedidos</a>
+    <a [routerLink]="['/productos']"    (click)="setIndex(3)">Inventario</a>
+    <a [routerLink]="['/registros']"    (click)="setIndex(4)">Registros</a>
+    <a *ngIf="rol === 'Admin'"  [routerLink]="['/usuarios']"     (click)="setIndex(5)">Usuarios</a>
+    <span class="indicator" [style.left.%]="indexActivo * (100 / totalItems)"></span>
   </div>
 
   <div class="nav-user">
     <div class="user-info">
-      <span class="user-name">{{nombre}}</span>
-      <span class="user-role">{{rol}}</span>
+      <span class="user-name">{{ nombre }}</span>
+      <span class="user-role">{{ rol }}</span>
     </div>
-    <div class="user-avatar">
-      <img src="assets/user-icon.png" alt="User">
+
+    <!-- Avatar con dropdown -->
+    <div class="user-avatar" (click)="toggleMenu($event)">
+      <img [src]="avatarUrl"
+           alt="Avatar"
+           onerror="this.style.display='none'" />
+      <span class="avatar-chevron" [class.avatar-chevron--open]="menuAbierto">▾</span>
+    </div>
+
+    <div class="dropdown" *ngIf="menuAbierto">
+      <div class="dropdown-header">
+        <img [src]="avatarUrl" alt="Avatar" onerror="this.style.display='none'" />
+        <div>
+          <span class="dropdown-nombre">{{ nombre }}</span>
+          <span class="dropdown-rol">{{ rol }}</span>
+        </div>
+      </div>
+      <div class="dropdown-divider"></div>
+      <button class="dropdown-item dropdown-item--danger" (click)="logout($event)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Cerrar sesión
+      </button>
     </div>
   </div>
 </nav>

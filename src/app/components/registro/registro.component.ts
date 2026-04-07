@@ -1,12 +1,11 @@
-// registros.component.ts
 import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RegistrosService } from '../../registros/registros.service';
-import { RegistroResumen, RegistroDetalle } from '../../registros/registros'
-import { DepartamentosService } from '../../departamentos/departamentos.service'; // ajusta ruta
+import { RegistroResumen, RegistroDetalle } from '../../registros/registros';
+import { DepartamentosService } from '../../departamentos/departamentos.service';
 
 const POR_PAGINA = 20;
 
@@ -20,31 +19,26 @@ const POR_PAGINA = 20;
 })
 export class RegistrosComponent implements OnInit, OnDestroy {
 
-  // ── Estado ───────────────────────────────
-  todos: RegistroResumen[]       = [];
-  filtrados: RegistroResumen[]   = [];
+  todos: RegistroResumen[]     = [];
+  filtrados: RegistroResumen[] = [];
   cargando    = false;
   errorMsg    = '';
 
-  // ── Filtros ──────────────────────────────
-  filtroTipo  = '';       // 'entrada' | 'salida' | ''
-  filtroFecha = '';       // YYYY-MM-DD
+  filtroTipo  = '';
+  filtroFecha = '';
 
-  // ── Pestañas / Paginación ────────────────
-  paginaActual  = 1;
-  totalPaginas  = 1;
-  pestanas: number[] = [];   // [1, 2, 3 ...]
+  paginaActual = 1;
+  totalPaginas = 1;
+  pestanas: number[] = [];
   registrosPagina: RegistroResumen[] = [];
 
-  // ── Modal detalle ────────────────────────
+  // Modal detalle
   registroSeleccionado: RegistroResumen | null = null;
   detalle: RegistroDetalle[] = [];
   cargandoDetalle = false;
   modalDetalle    = false;
 
-  // ── Usuario ──────────────────────────────
   plantelUsuario = 0;
-
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -62,8 +56,6 @@ export class RegistrosComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ── Carga ────────────────────────────────
 
   cargar(): void {
     this.cargando = true;
@@ -83,30 +75,19 @@ export class RegistrosComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ── Filtros ──────────────────────────────
-
   aplicarFiltros(): void {
-    let resultado = [...this.todos];
-
-    if (this.filtroTipo) {
-      resultado = resultado.filter(r => r.tipo === this.filtroTipo);
-    }
-    if (this.filtroFecha) {
-      resultado = resultado.filter(r => r.fecha.startsWith(this.filtroFecha));
-    }
-
-    this.filtrados     = resultado;
-    this.paginaActual  = 1;
+    let r = [...this.todos];
+    if (this.filtroTipo)  r = r.filter(x => x.tipo === this.filtroTipo);
+    if (this.filtroFecha) r = r.filter(x => x.fecha.startsWith(this.filtroFecha));
+    this.filtrados    = r;
+    this.paginaActual = 1;
     this.calcularPaginas();
   }
 
   limpiarFiltros(): void {
-    this.filtroTipo  = '';
-    this.filtroFecha = '';
+    this.filtroTipo = ''; this.filtroFecha = '';
     this.aplicarFiltros();
   }
-
-  // ── Paginación / Pestañas ────────────────
 
   calcularPaginas(): void {
     this.totalPaginas = Math.max(1, Math.ceil(this.filtrados.length / POR_PAGINA));
@@ -115,30 +96,22 @@ export class RegistrosComponent implements OnInit, OnDestroy {
   }
 
   irAPagina(n: number): void {
-    this.paginaActual = n;
-    const inicio = (n - 1) * POR_PAGINA;
+    this.paginaActual    = n;
+    const inicio         = (n - 1) * POR_PAGINA;
     this.registrosPagina = this.filtrados.slice(inicio, inicio + POR_PAGINA);
   }
 
-  // ── Modal detalle ────────────────────────
-
   verDetalle(r: RegistroResumen): void {
     this.registroSeleccionado = r;
-    this.detalle        = [];
+    this.detalle         = [];
     this.cargandoDetalle = true;
-    this.modalDetalle   = true;
+    this.modalDetalle    = true;
 
-    this.svc.VerDetalle(r.id_registro)
+    this.svc.VerDetalle(r.fecha, r.tipo, this.plantelUsuario, r.id_departamento)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.detalle         = data;
-          this.cargandoDetalle = false;
-        },
-        error: () => {
-          this.cargandoDetalle = false;
-          this.errorMsg        = 'Error al cargar detalle';
-        }
+        next: (data) => { this.detalle = data; this.cargandoDetalle = false; },
+        error: ()    => { this.cargandoDetalle = false; this.errorMsg = 'Error al cargar detalle'; }
       });
   }
 
@@ -148,13 +121,24 @@ export class RegistrosComponent implements OnInit, OnDestroy {
     this.detalle              = [];
   }
 
-  // ── Helpers ──────────────────────────────
-
   getBadgeClass(tipo: string): string {
     return tipo === 'entrada' ? 'badge-entrada' : 'badge-salida';
   }
 
   getTipoLabel(tipo: string): string {
     return tipo === 'entrada' ? '↑ Entrada' : '↓ Salida';
+  }
+
+  // Agrupar detalle por hora/movimiento para mostrar bien en el modal
+  get detalleAgrupado(): { hora: string; nota: string; usuario: string; productos: RegistroDetalle[] }[] {
+    const grupos: Map<string, { hora: string; nota: string; usuario: string; productos: RegistroDetalle[] }> = new Map();
+    for (const d of this.detalle) {
+      const key = `${d.hora}-${d.usuario}`;
+      if (!grupos.has(key)) {
+        grupos.set(key, { hora: d.hora, nota: d.nota, usuario: d.usuario, productos: [] });
+      }
+      grupos.get(key)!.productos.push(d);
+    }
+    return Array.from(grupos.values());
   }
 }
