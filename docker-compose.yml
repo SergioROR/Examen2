@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: inventario
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Sergio12
+      POSTGRES_DB: inventario
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - ./inventario.sql:/docker-entrypoint-initdb.d/inventario.sql
+
+    restart: always
