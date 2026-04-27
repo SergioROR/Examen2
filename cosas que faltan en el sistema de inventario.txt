@@ -1,0 +1,10 @@
+Botón de inventario de agregado rápido: quitar botón de restar y realizar registro cuando se agrega mas 
+Pedidos admin: botón de cancelar una ves aceptado
+Revisar la paginación de los productos
+Creación de documento en pdf y excell del inventario 
+Creación de usuarios: si el admin no elige una imagen que se seleccione aleatoriamente
+Modulo de configuración de perfil para los usuarios
+Modulo de registro agregar "Recibido por:" y "Confirmado por:"
+Después de un rato de inactividad cerrar sesión
+Mejorar diseño del login 
+Mantener una interfaz consistente en los diseños
