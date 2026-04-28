@@ -1,0 +1,76 @@
+plantel:
+    - id_plantel
+    - nombre
+    - imagen
+    - es_principal
+
+departamento:
+    - id_departamento   
+    - nombre
+    - descripcion
+    - id_plantel
+
+usuarios: 
+    - id_usuario
+    - nombre
+    - apellidos
+    - correo
+    - password
+    - rol
+    - id_plantel
+    - imagen
+    - estado
+
+productos:
+    - id_productos
+    - nombre
+    - descripcion
+    - modelo
+    - cantidad
+    - num_serie
+    - id_plantel
+    - id_departamento
+    - creacion
+    - actualizacion
+
+registro:
+    - id_registro
+    - fecha
+    - tipo
+    - nota
+    - id_departamento
+    - id_plantel
+    - id_usuario
+    - id_plantel_origen
+
+registro_productos:
+    - id_registro_productos
+    - cantidad 
+    - id_productos 
+    - id_registro
+
+pedidos:
+    - id_pedidos
+    - fecha
+    - descripcion
+    - id_plantel
+    - estado
+    - id_usuario
+
+detalle_pedido:
+    - id_detalle_pedido
+    - cantidad 
+    - id_pedido
+    - id_productos 
+
+solicitud_producto:
+    - id_solicitud_producto
+    - nombre
+    - descripcion
+    - modelo
+    - cantidad
+    - estado 
+    - id_usuario
+    - id_plantel
+    - id_producto_creado
+

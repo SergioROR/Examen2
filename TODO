@@ -1,0 +1,11 @@
+Security improvements:
+- Backend authentication
+
+Things that are broken:
+- Fix endpoint reference: /api/cambiarContraseña - /api/cambiarPassword
+- LoginGuard checks over rol being equal to 'admin' instead of 'Admin'
+
+Things to patch:
+- File uploads with no size limit => Use a MIME whitelist to multer
+- The process.env.port on server.js variable uses lowercase which is ignored on Linux
+- nodemon shouldn't be the production start command
