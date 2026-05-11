@@ -8,6 +8,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const rateLimit = require("express-rate-limit");
+const { logUsuarioIn, postUsuario, getUsuarios, updateUsuario, updateContraseña, toggleUsuarioEstado, updateImagen, getImagen } = require("../service/usuarioService/service");
+const { postPlantel, getPlanteles, getDetallePlantel, updatePlantelPrincipal, getProductosFromPlantelPrincipal } = require("../service/plantelService/service");
+const { getProductos, getProducto, postProduct } = require("../service/productoService/service");
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -29,10 +32,10 @@ const errorRes = (res, status, mensaje, detalle = null) => {
   return res.status(status).json(body);
 };
 
-// ... JUST FOR TESTING PURPOSES
-router.get("/api/hello/", async(req, res) => {
-  res.json("Hello  world!");
-});
+// // ... JUST FOR TESTING PURPOSES
+// router.get("/api/hello/", async(req, res) => {
+//   res.json("Hello  world!");
+// });
 
 // ── LOGIN ────────────────────────────────────────────────────
 const loginLimiter = rateLimit({
@@ -43,143 +46,76 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Demasiados intentos fallidos. Intenta de nuevo en 15 min."
+  message: "Demasiados intentos fallidos. Intentalo de nuevo en 15 minutos."
 })
 
 router.post("/api/login", loginLimiter, async (req, res) => {
-  const { correo, password } = req.body;
-  if (!correo || !password) {
-    return res.status(400).json({ verificacion: false, mensaje: "Campos obligatorios: correo y password" });
-  }
-  try {
-    const result = await db.query(
-      "SELECT id_usuario, correo, contraseña, nombre, rol, id_plantel, estado, imagen FROM usuarios WHERE correo = $1",
-      [correo]
-    );
-    if (result.rows.length === 0) {
-      return res.status(401).json({ verificacion: false, mensaje: "Correo o password incorrectos" });
-    }
-    const usuario = result.rows[0];
-
-    // ✅ Verificar si está inhabilitado ANTES de comparar password
-    if (usuario.estado === false) {
-      return res.status(403).json({
-        verificacion: false,
-        mensaje: "Correo o contraseña incorrectos"
-      });
-    }
-
-    const match = await bcrypt.compare(password, usuario.contraseña);
-    if (match) {
-      return res.status(200).json({
-        verificacion: true,
-        usuario: {
-          id_usuario: usuario.id_usuario,
-          nombre: usuario.nombre,
-          plantel: usuario.id_plantel,
-          rol: usuario.rol,
-          imagen: usuario.imagen
-        }
-      });
-    } else {
-      return res.status(401).json({ verificacion: false, mensaje: "Correo o contraseña incorrectos" });
-    }
-  } catch (error) {
-    console.error("Error en login:", error);
-    return res.status(500).json({ verificacion: false, mensaje: "Error interno del servidor" });
+  try{
+    const { correo, password } = req.body;
+    const result = await logUsuarioIn({correo, contraseña: password});
+    return res.status(200).json({verificacion: true, usuario: result});
+  }catch(err){
+    // const code = err.statusCode || 500;
+    console.log(err);
+    // console.log("status code: ", err.statusCode);
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── USUARIOS ─────────────────────────────────────────────────
 router.post("/api/usuario", async (req, res) => {
-  const { nombre, apellidos, correo, password, rol, id_plantel, imagen } = req.body;
-  if (!id_plantel || id_plantel === "undefined") {
-    return res.status(400).json({ mensaje: "Debes seleccionar un plantel válido" });
-  }
-  try {
-    const hashedpassword = await bcrypt.hash(password, saltRounds);
-    const result = await db.query(
-      `INSERT INTO usuarios (nombre, apellidos, correo, contraseña, rol, id_plantel, imagen) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [nombre, apellidos, correo, hashedpassword, rol, parseInt(id_plantel), imagen || null]
-    );
-    res.status(201).json({ mensaje: "Usuario creado correctamente", usuario: result.rows[0] });
-  } catch (error) {
-    console.error("Error al crear usuario:", error);
-    res.status(500).json({ mensaje: "Error al crear usuario" });
+  try{
+    const result = await postUsuario(req.body);
+    return res.status(201).json({verificacion: true, mensaje: "Usuario creado correctamente.", usuario:result})
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
-// Reemplaza tu GET /api/usuarios por este:
-router.get("/api/usuarios", (req, res) => {
-  const sql = `
-    SELECT u.id_usuario, u.nombre, u.apellidos, u.rol, u.correo,
-           u.estado, u.imagen, p.nombre AS plantel, u.id_plantel
-    FROM usuarios u
-    INNER JOIN planteles p ON u.id_plantel = p.id_plantel
-  `;
-  db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ mensaje: "Error al consultar los usuarios", detalle: err.message });
-    return res.status(200).json(result.rows);
-  });
+// Gell all users
+router.get("/api/usuarios", async (req, res) => {
+  try{
+    const result = await getUsuarios();
+    return res.status(200).json(result);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
+  }
 });
 
-// Agrega también este endpoint para editar usuario:
+// Update user
 router.put("/api/usuario/editar", async (req, res) => {
-  const { id_usuario, nombre, apellidos, correo, rol, id_plantel } = req.body;
-  if (!id_usuario) return res.status(400).json({ mensaje: "id_usuario requerido" });
-  try {
-    const result = await db.query(
-      `UPDATE usuarios SET
-        nombre     = COALESCE($1, nombre),
-        apellidos  = COALESCE($2, apellidos),
-        correo     = COALESCE($3, correo),
-        rol        = COALESCE($4, rol),
-        id_plantel = COALESCE($5, id_plantel)
-       WHERE id_usuario = $6 RETURNING id_usuario, nombre, apellidos, correo, rol, id_plantel`,
-      [nombre || null, apellidos || null, correo || null, rol || null,
-      id_plantel ? parseInt(id_plantel) : null, parseInt(id_usuario)]
-    );
-    if (result.rowCount === 0) return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    res.status(200).json({ mensaje: "Usuario actualizado correctamente", usuario: result.rows[0] });
-  } catch (error) {
-    console.error("Error al editar usuario:", error);
-    res.status(500).json({ mensaje: "Error al editar usuario" });
+  try{
+    const result = await updateUsuario(req.body);
+    return res.status(200).json({mensaje: "Usuario actualizado correctamente.", usuario:result});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
+// Update user password
 router.put("/api/cambiarpassword", async (req, res) => {
-  const { correo, password } = req.body;
-  if (!correo || !password) {
-    return res.status(400).json({ verificacion: false, mensaje: "Campos obligatorios: correo y password" });
-  }
-  try {
-    const newpassword = await bcrypt.hash(password, saltRounds);
-    const result = await db.query("UPDATE usuarios SET password = $1 WHERE correo = $2 RETURNING *", [newpassword, correo]);
-    if (result.rowCount === 0) return res.status(404).json({ verificacion: false, mensaje: "No se encontró un usuario con ese correo" });
-    return res.status(200).json({ verificacion: true, mensaje: "password actualizada correctamente" });
-  } catch (error) {
-    console.error("Error al cambiar password:", error);
-    return res.status(500).json({ verificacion: false, mensaje: "Error interno del servidor" });
+  try{
+    await updateContraseña(req.body);
+    return res.status(200).json({verificacion:true, mensaje: "Contraseña actualizada correctamente."});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
+//User's soft deletion
 router.put("/api/cambiarEstado", async (req, res) => {
-  const { correo, estado } = req.body;
-  if (!correo) return res.status(400).json({ verificacion: false, mensaje: "Campos obligatorios: correo" });
-  try {
-    const result = await db.query("UPDATE usuarios SET estado = $1 WHERE correo = $2 RETURNING *", [estado, correo]);
-    if (result.rowCount === 0) return res.status(404).json({ verificacion: false, mensaje: "No se encontró un usuario con ese correo" });
-    return res.status(200).json({ verificacion: true, mensaje: `Usuario ${estado ? "habilitado" : "inhabilitado"} correctamente`, nuevoEstado: estado });
-  } catch (error) {
-    console.error("Error al cambiar estado del usuario:", error);
-    return res.status(500).json({ verificacion: false, mensaje: "Error interno del servidor" });
+  try{
+    const result = await toggleUsuarioEstado(req.body);
+    return res.status(200).json({ verificacion: true, mensaje: `Usuario ${result.esta_activo? 'activado' : 'deshabilitado'} correctamente.`, nuevoEstado: result.esta_activo});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── GET /api/avatares ────────────────────────────────────────
 // Lista solo los archivos de la carpeta imagenes/avatares/
 router.get("/api/avatares", (req, res) => {
-  const carpeta = path.join(__dirname, '../imagenes/avatares');
+  const carpeta = path.join(__dirname, '../../../imagenes/avatares');
 
   // Crear la carpeta si no existe
   if (!fs.existsSync(carpeta)) {
@@ -198,253 +134,151 @@ router.get("/api/avatares", (req, res) => {
 // ── PUT /api/usuario/imagen ──────────────────────────────────
 // Actualiza la imagen del usuario en sesión
 router.put("/api/usuario/imagen", async (req, res) => {
-  const { id_usuario, imagen } = req.body;
-  if (!id_usuario || !imagen) {
-    return res.status(400).json({ mensaje: "Faltan campos requeridos" });
-  }
-  try {
-    const result = await db.query(
-      `UPDATE usuarios SET imagen = $1 WHERE id_usuario = $2 RETURNING id_usuario, imagen`,
-      [imagen, parseInt(id_usuario)]
-    );
-    if (result.rowCount === 0) return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    res.status(200).json({ mensaje: "Imagen actualizada correctamente", imagen: result.rows[0].imagen });
-  } catch (error) {
-    console.error("Error al actualizar imagen:", error);
-    res.status(500).json({ mensaje: "Error al actualizar imagen" });
+  try{
+    const result  = await updateImagen(req.body);
+    res.status(200).json({ mensaje: "Imagen actualizada correctamente", imagen: result });
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── GET /api/usuario/:id/imagen ──────────────────────────────
 // Obtiene la imagen actual del usuario
 router.get("/api/usuario/:id/imagen", async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT imagen FROM usuarios WHERE id_usuario = $1`,
-      [parseInt(req.params.id)]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    res.status(200).json({ imagen: result.rows[0].imagen });
-  } catch (error) {
-    res.status(500).json({ mensaje: "Error al obtener imagen" });
+  try{
+    const result = await getImagen(req.params);
+    res.status(200).json({mensaje: "Imagen obtenida correctamente.", imagen: result});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── PLANTELES ────────────────────────────────────────────────
 router.post("/api/plantel", upload.single('imagen'), async (req, res) => {
-  const { nombre } = req.body;
-  const imagen = req.file ? req.file.filename : null;
-
-  if (!nombre) return res.status(400).json({ mensaje: "El nombre es requerido" });
-
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-
-    // 1. Crear el plantel
-    const result = await client.query(
-      "INSERT INTO planteles(nombre, imagen) VALUES ($1, $2) RETURNING *",
-      [nombre, imagen]
-    );
-    const plantel = result.rows[0];
-
-    // 2. Crear departamentos por defecto ✅
-    await client.query(
-      `INSERT INTO departamento (nombre, descripcion, id_plantel) VALUES
-      ('Control de Equipos y Soporte', 'Departamento de control de equipos y soporte técnico', $1)`,
-      [plantel.id_plantel]
-    );
-
-    await client.query("COMMIT");
-    return res.status(201).json(plantel);
-
-  } catch (err) {
-    await client.query("ROLLBACK");
-    console.error("Error al crear plantel:", err);
-    return res.status(500).json({ mensaje: "Error al guardar el plantel" });
-  } finally {
-    client.release();
+  try{
+    const result = await postPlantel(req.body, req.file);
+    return res.status(201).json(result);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
-router.get("/api/planteles", (req, res) => {
-  db.query("SELECT id_plantel,nombre, imagen from planteles", (err, result) => {
-    if (err) return res.status(500).json({ mensaje: "Error al consultar los planteles", detalle: err.message });
-    return res.status(200).json(result.rows);
-  });
+router.get("/api/planteles", async (req, res) => {
+  try{
+    const result = await getPlanteles();
+    return res.status(200).json(result);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
+  }
 });
 
 // ── GET /api/planteles/detalle/:id ───────────────────────────
 router.get("/api/planteles/detalle/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [plantel, productos, usuarios] = await Promise.all([
-      db.query(`SELECT * FROM planteles WHERE id_plantel = $1`, [parseInt(id)]),
-      db.query(`
-        SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo,
-               pr.cantidad, pr.num_serie, d.nombre AS departamento
-        FROM productos pr
-        JOIN departamento d ON d.id_departamento = pr.id_departamento
-        WHERE pr.id_plantel = $1
-        ORDER BY pr.nombre ASC
-      `, [parseInt(id)]),
-      db.query(`
-        SELECT u.nombre, u.apellidos, u.correo, u.rol, u.estado, u.imagen
-        FROM usuarios u
-        WHERE u.id_plantel = $1
-        ORDER BY u.rol, u.nombre ASC
-      `, [parseInt(id)])
-    ]);
-    if (plantel.rows.length === 0) return res.status(404).json({ mensaje: "Plantel no encontrado" });
-    res.status(200).json({
-      plantel: plantel.rows[0],
-      productos: productos.rows,
-      usuarios: usuarios.rows
-    });
-  } catch (error) {
-    console.error("Error al obtener detalle del plantel:", error);
-    res.status(500).json({ mensaje: "Error al obtener detalle del plantel" });
+  try{
+    const {plantel, productos, usuarios} = await getDetallePlantel(req.params);
+    return res.status(200).json({plantel, productos, usuarios})
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── PATCH /api/planteles/:id/principal ───────────────────────
 router.patch("/api/planteles/:id/principal", async (req, res) => {
-  const { id } = req.params;
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-    // Quitar principal a todos
-    await client.query(`UPDATE planteles SET es_principal = false`);
-    // Asignar al nuevo
-    await client.query(
-      `UPDATE planteles SET es_principal = true WHERE id_plantel = $1`,
-      [parseInt(id)]
-    );
-    await client.query("COMMIT");
-    res.status(200).json({ mensaje: "Plantel principal actualizado correctamente" });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al cambiar plantel principal:", error);
-    res.status(500).json({ mensaje: "Error al cambiar plantel principal" });
-  } finally {
-    client.release();
+  try{
+    const result = await updatePlantelPrincipal(req.params);
+    return res.status(200).json({mensaje: "Plantel principal actualizado correctamente."})
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── GET /api/productos/principal ─────────────────────────────
 // Devuelve productos del plantel marcado como es_principal = true
 router.get("/api/productos/principal", async (req, res) => {
-  try {
-    const sql = `
-      SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo,
-             pr.cantidad, pr.num_serie, pr.creacion, pr.actualizacion,
-             p.nombre AS plantel, d.nombre AS departamento
-      FROM productos pr
-      INNER JOIN planteles p ON pr.id_plantel = p.id_plantel
-      INNER JOIN departamento d ON pr.id_departamento = d.id_departamento
-      WHERE p.es_principal = true
-        AND pr.cantidad > 0
-      ORDER BY pr.nombre ASC
-    `;
-    const result = await db.query(sql);
-    return res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("GET /api/productos/principal:", err);
-    return errorRes(res, 500, "Error al obtener productos del plantel principal", err.message);
+  try{
+    const result = await getProductosFromPlantelPrincipal();
+    return res.status(200).json(result);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 // ── PRODUCTOS ────────────────────────────────────────────────
 router.get("/api/productos", async (req, res) => {
-  try {
-    const sql = `
-      SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo, pr.cantidad,
-             pr.num_serie, pr.creacion, pr.actualizacion,
-             p.nombre AS plantel, d.nombre AS departamento
-      FROM productos pr
-      INNER JOIN planteles p ON pr.id_plantel = p.id_plantel
-      INNER JOIN departamento d ON pr.id_departamento = d.id_departamento
-      ORDER BY pr.creacion DESC
-    `;
-    const result = await db.query(sql);
-    if (result.rows.length === 0) return res.status(404).json({ mensaje: "No se encontraron productos" });
-    return res.status(200).json(result.rows);
-  } catch (err) {
-    return errorRes(res, 500, "Error al consultar los productos", err.message);
+  try{
+    const products = await getProductos();
+    return res.status(200).json(products);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 router.post("/api/productos/detalle", async (req, res) => {
-  const { id_productos } = req.body;
-  if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
-  try {
-    const sql = `
-      SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo, pr.cantidad,
-             pr.num_serie, pr.creacion, pr.actualizacion,
-             p.nombre AS plantel, d.nombre AS departamento
-      FROM productos pr
-      INNER JOIN planteles p ON pr.id_plantel = p.id_plantel
-      INNER JOIN departamento d ON pr.id_departamento = d.id_departamento
-      WHERE pr.id_productos = $1
-    `;
-    const result = await db.query(sql, [id_productos]);
-    if (result.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
-    return res.status(200).json(result.rows[0]);
-  } catch (err) {
-    return errorRes(res, 500, "Error al consultar el producto", err.message);
+  try{
+    const producto =  await getProducto(req.body);
+    return res.status(200).json(producto);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
 });
 
 router.post("/api/productos", async (req, res) => {
-  const { nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento } = req.body;
-  const faltantes = [];
-  if (!nombre) faltantes.push("nombre");
-  if (!num_serie) faltantes.push("num_serie");
-  if (!cantidad) faltantes.push("cantidad");
-  if (!id_plantel) faltantes.push("id_plantel");
-  if (!id_departamento) faltantes.push("id_departamento");
-  if (faltantes.length > 0) return errorRes(res, 400, `Faltan campos requeridos: ${faltantes.join(", ")}`);
-  if (!esEnteroPositivo(cantidad)) return errorRes(res, 400, "La cantidad debe ser un número entero positivo");
-  try {
-    const existe = await db.query("SELECT id_productos, cantidad FROM productos WHERE num_serie = $1 AND id_plantel = $2", [num_serie, parseInt(id_plantel)]);
-    if (existe.rows.length > 0) {
-      const actualizado = await db.query(
-        `UPDATE productos SET cantidad = cantidad + $1, actualizacion = NOW() WHERE num_serie = $2 AND id_plantel = $3 RETURNING *`,
-        [parseInt(cantidad), num_serie, parseInt(id_plantel)]
-      );
-      return res.status(200).json({ mensaje: `Producto ya existente. Se agregaron ${cantidad} unidades.`, accion: "cantidad_actualizada", producto: actualizado.rows[0] });
-    }
-    const nuevo = await db.query(
-      `INSERT INTO productos (nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento, creacion, actualizacion)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW()) RETURNING *`,
-      [nombre, descripcion || null, modelo || null, parseInt(cantidad), num_serie, parseInt(id_plantel), parseInt(id_departamento)]
-    );
-    return res.status(201).json({ mensaje: "Producto creado correctamente", accion: "creado", producto: nuevo.rows[0] });
-  } catch (err) {
-    return errorRes(res, 500, "Error al crear/actualizar el producto", err.message);
+  try{
+    const {mensaje, accion, result} = await postProduct(req.body);
+    return res.status(200).json({ mensaje: mensaje, accion: accion, producto: result});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
+
+  // const { nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento } = req.body;
+  // const faltantes = [];
+  // if (!nombre) faltantes.push("nombre");
+  // if (!num_serie) faltantes.push("num_serie");
+  // if (!cantidad) faltantes.push("cantidad");
+  // if (!id_plantel) faltantes.push("id_plantel");
+  // if (!id_departamento) faltantes.push("id_departamento");
+  // if (faltantes.length > 0) return errorRes(res, 400, `Faltan campos requeridos: ${faltantes.join(", ")}`);
+  // if (!esEnteroPositivo(cantidad)) return errorRes(res, 400, "La cantidad debe ser un número entero positivo");
+  // try {
+  //   const existe = await db.query("SELECT id_productos, cantidad FROM productos WHERE num_serie = $1 AND id_plantel = $2", [num_serie, parseInt(id_plantel)]);
+  //   if (existe.rows.length > 0) {
+  //     const actualizado = await db.query(
+  //       `UPDATE productos SET cantidad = cantidad + $1, actualizacion = NOW() WHERE num_serie = $2 AND id_plantel = $3 RETURNING *`,
+  //       [parseInt(cantidad), num_serie, parseInt(id_plantel)]
+  //     );
+  //     return res.status(200).json({ mensaje: `Producto ya existente. Se agregaron ${cantidad} unidades.`, accion: "cantidad_actualizada", producto: actualizado.rows[0] });
+  //   }
+  //   const nuevo = await db.query(
+  //     `INSERT INTO productos (nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento, creacion, actualizacion)
+  //      VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW()) RETURNING *`,
+  //     [nombre, descripcion || null, modelo || null, parseInt(cantidad), num_serie, parseInt(id_plantel), parseInt(id_departamento)]
+  //   );
+  //   return res.status(201).json({ mensaje: "Producto creado correctamente", accion: "creado", producto: nuevo.rows[0] });
+  // } catch (err) {
+  //   return errorRes(res, 500, "Error al crear/actualizar el producto", err.message);
+  // }
 });
 
 router.put("/api/productos/cantidad", async (req, res) => {
-  const { id_productos, operacion, cantidad } = req.body;
-  if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
-  if (!["agregar", "restar"].includes(operacion)) return errorRes(res, 400, 'operacion debe ser "agregar" o "restar"');
-  if (!cantidad || !esEnteroPositivo(cantidad)) return errorRes(res, 400, "cantidad debe ser un número entero positivo");
-  try {
-    const actual = await db.query("SELECT id_productos, cantidad FROM productos WHERE id_productos = $1", [id_productos]);
-    if (actual.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
-    if (operacion === "restar" && actual.rows[0].cantidad < parseInt(cantidad)) {
-      return errorRes(res, 400, `Stock insuficiente. Disponible: ${actual.rows[0].cantidad}, solicitado: ${cantidad}`);
-    }
-    const signo = operacion === "agregar" ? "+" : "-";
-    const result = await db.query(
-      `UPDATE productos SET cantidad = cantidad ${signo} $1, actualizacion = NOW() WHERE id_productos = $2 RETURNING *`,
-      [parseInt(cantidad), id_productos]
-    );
-    return res.status(200).json({ mensaje: `Se ${operacion === "agregar" ? "agregaron" : "restaron"} ${cantidad} unidades`, producto: result.rows[0] });
-  } catch (err) {
-    return errorRes(res, 500, "Error al actualizar la cantidad", err.message);
-  }
+  // const { id_productos, operacion, cantidad } = req.body;
+  // if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
+  // if (!["agregar", "restar"].includes(operacion)) return errorRes(res, 400, 'operacion debe ser "agregar" o "restar"');
+  // if (!cantidad || !esEnteroPositivo(cantidad)) return errorRes(res, 400, "cantidad debe ser un número entero positivo");
+  // try {
+  //   const actual = await db.query("SELECT id_productos, cantidad FROM productos WHERE id_productos = $1", [id_productos]);
+  //   if (actual.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
+  //   if (operacion === "restar" && actual.rows[0].cantidad < parseInt(cantidad)) {
+  //     return errorRes(res, 400, `Stock insuficiente. Disponible: ${actual.rows[0].cantidad}, solicitado: ${cantidad}`);
+  //   }
+  //   const signo = operacion === "agregar" ? "+" : "-";
+  //   const result = await db.query(
+  //     `UPDATE productos SET cantidad = cantidad ${signo} $1, actualizacion = NOW() WHERE id_productos = $2 RETURNING *`,
+  //     [parseInt(cantidad), id_productos]
+  //   );
+  //   return res.status(200).json({ mensaje: `Se ${operacion === "agregar" ? "agregaron" : "restaron"} ${cantidad} unidades`, producto: result.rows[0] });
+  // } catch (err) {
+  //   return errorRes(res, 500, "Error al actualizar la cantidad", err.message);
+  // }
 });
 
 router.put("/api/productos/editar", async (req, res) => {

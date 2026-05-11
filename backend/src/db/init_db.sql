@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     correo VARCHAR(150) NOT NULL UNIQUE,
     contraseña TEXT NOT NULL,
     rol VARCHAR(20) NOT NULL DEFAULT 'USUARIO',
-    id_plantel BIGINT REFERENCES planteles(id_plantel),
+    id_plantel BIGINT NOT NULL REFERENCES planteles(id_plantel),
     imagen TEXT,
     esta_activo BOOLEAN NOT NULL DEFAULT true
  );
@@ -34,11 +34,19 @@ CREATE TABLE IF NOT EXISTS productos (
     descripcion TEXT,
     modelo VARCHAR(100) NOT NULL,
     num_serie VARCHAR(100) NOT NULL,
-    cantidad INTEGER NOT NULL DEFAULT 0 CHECK (cantidad > 0),
+    cantidad INTEGER NOT NULL DEFAULT 0 CHECK (cantidad >= 0),
     creado_el TIMESTAMP NOT NULL DEFAULT NOW(),
-    actualizado_el TIMESTAMP NOT NULL,
-    id_departamento BIGINT NOT NULL
+    actualizado_el TIMESTAMP NULL,
+    id_departamento BIGINT NOT NULL REFERENCES departamentos(id_departamento)
 );
+
+-- Product - Plantel index
+CREATE UNIQUE INDEX ui_producto_plantel
+ON productos (num_serie, (
+    SELECT id_plantel
+    FROM departamentos
+    WHERE departamentos.id_departamento = productos.id_departamento
+));
 
 -- Pedidos table
 CREATE TABLE IF NOT EXISTS pedidos(
@@ -90,5 +98,27 @@ CREATE TABLE IF NOT EXISTS registros_productos(
     id_registro BIGINT NOT NULL REFERENCES registros(id_registro) 
 );
 
-INSERT INTO usuarios (nombre, apellidos, correo, contraseña, rol)
-VALUES ('John', 'Doe', 'admin@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ADMIN');
+-- Vista para consultar los productos de un departamento
+CREATE VIEW vista_departamento_productos AS 
+SELECT 
+    pr.id_producto,
+    pr.nombre,
+    pr.descripcion,
+    pr.modelo,
+    pr.num_serie,
+    pr.cantidad,
+    pr.creado_el,
+    pr.actualizado_el,
+    d.nombre AS departamento,
+    p.nombre AS plantel,
+    d.id_plantel
+FROM productos pr
+JOIN departamentos d ON d.id_departamento = pr.id_departamento 
+JOIN planteles p ON d.id_plantel = p.id_plantel;
+-- ORDER BY pr.nombre ASC;
+
+INSERT INTO planteles(nombre)
+VALUES ('Juárez');
+
+INSERT INTO usuarios (nombre, apellidos, correo, contraseña, rol, id_plantel)
+VALUES ('John', 'Doe', 'admin@gmail.com', '$2a$10$0z3vlmNSEBCyXAdOfjejqON2HnpALgpzJGoTrC4Ssh.ScSYmTCBNu', 'ADMIN', 1);
