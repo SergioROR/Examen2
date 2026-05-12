@@ -10,7 +10,7 @@ const fs = require('fs');
 const rateLimit = require("express-rate-limit");
 const { logUsuarioIn, postUsuario, getUsuarios, updateUsuario, updateContraseña, toggleUsuarioEstado, updateImagen, getImagen } = require("../service/usuarioService/service");
 const { postPlantel, getPlanteles, getDetallePlantel, updatePlantelPrincipal, getProductosFromPlantelPrincipal } = require("../service/plantelService/service");
-const { getProductos, getProducto, postProduct } = require("../service/productoService/service");
+const { getProductos, getProducto, postProducto, putProductoCantidad } = require("../service/productoService/service");
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -224,8 +224,8 @@ router.post("/api/productos/detalle", async (req, res) => {
 
 router.post("/api/productos", async (req, res) => {
   try{
-    const {mensaje, accion, result} = await postProduct(req.body);
-    return res.status(200).json({ mensaje: mensaje, accion: accion, producto: result});
+    const {mensaje, accion, producto} = await postProducto(req.body);
+    return res.status(producto.es_nuevo ? 201 : 200).json({ mensaje: mensaje, accion: accion, producto: producto});
   }catch(err){
     return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."}); 
   }
@@ -260,6 +260,12 @@ router.post("/api/productos", async (req, res) => {
 });
 
 router.put("/api/productos/cantidad", async (req, res) => {
+  try{
+    const {mensaje, producto} = await putProductoCantidad(req.body);
+    return res.status(200).json({mensaje: mensaje, producto: producto});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."});
+  }
   // const { id_productos, operacion, cantidad } = req.body;
   // if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
   // if (!["agregar", "restar"].includes(operacion)) return errorRes(res, 400, 'operacion debe ser "agregar" o "restar"');

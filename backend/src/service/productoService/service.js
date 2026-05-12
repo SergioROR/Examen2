@@ -1,6 +1,7 @@
+const Producto = require("../../model/productos");
 const ErrorImpl = require("../../utils/errorImpl");
 const { isAnIntegerNumber } = require("../../utils/quantity_validators");
-const { getAllProductos, getProductoById, addProducto } = require("./db_queries");
+const { getAllProductos, getProductoById, addProducto, updateProductoCantidad } = require("./db_queries");
 
 async function getProductos() {
     try{
@@ -28,7 +29,7 @@ async function getProducto(body){
     }
 }
 
-async function postProduct(body){
+async function postProducto(body){
     try{
         const product = new Producto(body);
         const required = ['nombre', 'modelo', 'num_serie', 'cantidad', 'id_departamento'];
@@ -45,11 +46,10 @@ async function postProduct(body){
         
         const result = await addProducto(product);
         const {es_nuevo, cantidad} = result;
-        let [mensaje, accion] = es_nuevo 
+        const [mensaje, accion] = es_nuevo 
             ? ["Producto creado correctamente.", "creado"] 
             : [`Producto ya existente. Se agregaron ${cantidad} unidades.`, "cantidad_actualizada"];
-        
-        return {mensaje, accion, result};
+        return {mensaje, accion, producto:result};
         
     }catch(err){
         console.error(`Error al insertar un producto: ${err}.`);
@@ -57,9 +57,34 @@ async function postProduct(body){
     }
 }
 
+async function putProductoCantidad(body){
+    try{
+        const { id_producto, operacion, cantidad } = body;
+        if (!id_producto || !isAnIntegerNumber(id_producto) || 
+            !operacion || !["agregar", "restar"].includes(operacion) || 
+            !cantidad || !isAnIntegerNumber(cantidad))
+            throw new ErrorImpl(`La acción no ha podido completarse debido a la ausencia de campos requeridos o formato inadecuado.`, 400);
+
+        const updatedProducto = await updateProductoCantidad(id_producto, operacion, cantidad);
+        if (!updatedProducto) throw new ErrorImpl("Stock insuficiente o producto no encontrado.", 404);
+        
+        return {
+            mensaje: `Se ${operacion === "agregar" ? "agregaron" : "restaron"} ${cantidad} unidades.`,
+            producto: updatedProducto
+        };
+
+    }catch(err){
+        console.error(`Error al actualizar la cantidad de un producto: ${err}.`);
+        throw err;
+    }
+}
+
+
 module.exports = {
     getProductos,
     getProducto,
-    postProduct
+    postProducto,
+    putProductoCantidad
+
 
 }

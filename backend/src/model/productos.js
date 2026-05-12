@@ -22,3 +22,5 @@ class Producto{
         this.id_departamento = id_departamento;
     }
 }
+
+module.exports = Producto;

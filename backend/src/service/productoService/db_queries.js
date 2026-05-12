@@ -78,9 +78,28 @@ async function addProducto(producto){
     }
 }
 
+async function updateProductoCantidad(id_producto, operacion, cantidad){
+    try{
+        const signo = operación === "agregar" ? "+" : "-";
+        const result = await db.query(
+            `UPDATE productos 
+            SET cantidad = cantidad ${signo} $2
+                actualizado_el = NOW()
+            WHERE id_producto = $1 AND (($3 = 'agregar') OR (cantidad >= $2))
+            RETURNING *`,
+            [parseInt(id_producto), parseInt(cantidad), operacion]
+        );
+        return result.rowCount > 0 ? result.rows[0] : null;
+    }catch(err){
+        console.error(`Error en la base de datos al actualizar la cantidad del producto: ${err}.`);
+        throw new ErrorImpl("Error al actualizar la cantidad del producto.", 500);
+    }
+}
+
 module.exports = {
     getProductosByPlantelId,
     getAllProductos,
     getProductoById,
-    addProducto
+    addProducto,
+    updateProductoCantidad
 }
