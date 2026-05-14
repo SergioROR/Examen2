@@ -1,7 +1,7 @@
 const Producto = require("../../model/productos");
 const ErrorImpl = require("../../utils/errorImpl");
 const { isAnIntegerNumber } = require("../../utils/quantity_validators");
-const { getAllProductos, getProductoById, addProducto, updateProductoCantidad } = require("./db_queries");
+const { getAllProductos, getProductoById, addProducto, updateProductoCantidad, updateProducto, softDeleteProducto } = require("./db_queries");
 
 async function getProductos() {
     try{
@@ -79,12 +79,50 @@ async function putProductoCantidad(body){
     }
 }
 
+async function putProducto(body){
+    try{
+        const producto = new Producto(body);
+        if(!producto.id_producto || !isAnIntegerNumber(producto.id_producto)
+            || (producto.cantidad && !isAnIntegerNumber(producto.cantidad)) 
+            || (producto.id_departamento && !isAnIntegerNumber(producto.id_departamento)))
+            throw new ErrorImpl("La acción no ha podido completarse debido a la ausencia de campos requeridos o formato inadecuado.", 400);
+        const {id_producto, ...otrosCampos} = producto;
+        if(Object.values(otrosCampos).every((i) => i === undefined || i === null || i === ""))
+            throw new ErrorImpl("Al menos un campo debe enviarse para ser actualizado.", 400);
+
+        const result = await updateProducto(producto);
+
+        if(!result)
+            throw new ErrorImpl("Producto no encontrado.", 404);
+
+        return result;
+
+    }catch(err){
+        console.error(`Error al actualizar producto: ${err}.`);
+        throw err;
+    }
+}
+
+async function deleteProducto(id_producto){
+    try{
+        if (!id_producto || !isAnIntegerNumber(id_producto))
+            throw new ErrorImpl("La acción no ha podido completarse debido a la ausencia de campos requeridos o formato inadecuado.", 400);
+        const result = await softDeleteProducto(id_producto);
+        if (!result) 
+            throw new ErrorImpl("Producto no encontrado.", 404);
+        return result;
+    }catch(err){
+        console.error(`Error al actualizar producto: ${err}.`);
+        throw err;
+    }
+}
+
 
 module.exports = {
     getProductos,
     getProducto,
     postProducto,
-    putProductoCantidad
-
-
+    putProductoCantidad,
+    putProducto,
+    deleteProducto,
 }

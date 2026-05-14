@@ -80,7 +80,7 @@ async function addProducto(producto){
 
 async function updateProductoCantidad(id_producto, operacion, cantidad){
     try{
-        const signo = operación === "agregar" ? "+" : "-";
+        const signo = operacion === "agregar" ? "+" : "-";
         const result = await db.query(
             `UPDATE productos 
             SET cantidad = cantidad ${signo} $2
@@ -96,10 +96,60 @@ async function updateProductoCantidad(id_producto, operacion, cantidad){
     }
 }
 
+async function updateProducto(producto){
+    try{
+        const { id_producto, nombre, descripcion, modelo, num_serie, cantidad, id_departamento } = producto;
+        const result = await db.query(
+            `UPDATE productos 
+                SET nombre = COALESCE($1, nombre),
+                    descripcion = COALESCE($2, descripcion),
+                    modelo = COALESCE($3, modelo),
+                    cantidad = COALESCE($4, cantidad),
+                    num_serie = COALESCE($5, num_serie),
+                    id_departamento = COALESCE($6, id_departamento),
+                    actualizado_el = NOW()
+            WHERE id_producto = $7
+            RETURNING *`,
+            [nombre || null, 
+            descripcion || null, 
+            modelo || null,
+            cantidad ? parseInt(cantidad) : null, 
+            num_serie || null, 
+            id_departamento ? parseInt(id_departamento) : null,
+            parseInt(id_producto)]
+        );
+        
+        return result.rowCount > 0 ? result.rows[0] : null;
+    }catch(err){
+        console.error(`Error en la base de datos al actualizar producto: ${err}.`);
+        throw new ErrorImpl("Error al actualizar producto.", 500);
+    }
+}
+
+async function softDeleteProducto(id_producto){
+    try{
+        const result = await db.query(
+            `UPDATE productos 
+            SET esta_activo = false,
+                actualizado_el = NOW()
+            WHERE id_producto = $1
+            RETURNING *`, 
+            [parseInt(id_producto)]
+        );
+        return result.rowCount > 0 ? result.rows[0] : null;
+    }catch(err){
+        console.error(`Error en la base de datos al eliminar un producto.`, 500);
+        throw new ErrorImpl("Error al eliminar un producto.", 500);
+    }
+}
+
 module.exports = {
     getProductosByPlantelId,
     getAllProductos,
     getProductoById,
     addProducto,
-    updateProductoCantidad
+    updateProductoCantidad,
+    updateProducto,
+    softDeleteProducto,
+
 }

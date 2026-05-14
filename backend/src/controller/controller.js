@@ -10,7 +10,7 @@ const fs = require('fs');
 const rateLimit = require("express-rate-limit");
 const { logUsuarioIn, postUsuario, getUsuarios, updateUsuario, updateContraseña, toggleUsuarioEstado, updateImagen, getImagen } = require("../service/usuarioService/service");
 const { postPlantel, getPlanteles, getDetallePlantel, updatePlantelPrincipal, getProductosFromPlantelPrincipal } = require("../service/plantelService/service");
-const { getProductos, getProducto, postProducto, putProductoCantidad } = require("../service/productoService/service");
+const { getProductos, getProducto, postProducto, putProductoCantidad, putProducto, deleteProducto } = require("../service/productoService/service");
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -288,37 +288,49 @@ router.put("/api/productos/cantidad", async (req, res) => {
 });
 
 router.put("/api/productos/editar", async (req, res) => {
-  const { id_productos, nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento } = req.body;
-  if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
-  if (cantidad !== undefined && !esEnteroPositivo(cantidad)) return errorRes(res, 400, "cantidad debe ser un número entero positivo");
-  const camposRecibidos = [nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento];
-  if (camposRecibidos.every((v) => v === undefined || v === null || v === "")) return errorRes(res, 400, "Debes enviar al menos un campo para actualizar");
-  try {
-    const result = await db.query(
-      `UPDATE productos SET nombre = COALESCE($1, nombre), descripcion = COALESCE($2, descripcion),
-       modelo = COALESCE($3, modelo), cantidad = COALESCE($4, cantidad), num_serie = COALESCE($5, num_serie),
-       id_plantel = COALESCE($6, id_plantel), id_departamento = COALESCE($7, id_departamento), actualizacion = NOW()
-       WHERE id_productos = $8 RETURNING *`,
-      [nombre || null, descripcion || null, modelo || null, cantidad ? parseInt(cantidad) : null,
-      num_serie || null, id_plantel ? parseInt(id_plantel) : null, id_departamento ? parseInt(id_departamento) : null, id_productos]
-    );
-    if (result.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
-    return res.status(200).json({ mensaje: "Producto actualizado correctamente", producto: result.rows[0] });
-  } catch (err) {
-    return errorRes(res, 500, "Error al editar el producto", err.message);
+  try{
+    const producto = await putProducto(req.body);
+    return res.status(200).json({ mensaje: "Producto actualizado correctamente.", producto: producto})
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."});
   }
+  // const { id_productos, nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento } = req.body;
+  // if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
+  // if (cantidad !== undefined && !esEnteroPositivo(cantidad)) return errorRes(res, 400, "cantidad debe ser un número entero positivo");
+  // const camposRecibidos = [nombre, descripcion, modelo, cantidad, num_serie, id_plantel, id_departamento];
+  // if (camposRecibidos.every((v) => v === undefined || v === null || v === "")) return errorRes(res, 400, "Debes enviar al menos un campo para actualizar");
+  // try {
+  //   const result = await db.query(
+  //     `UPDATE productos SET nombre = COALESCE($1, nombre), descripcion = COALESCE($2, descripcion),
+  //      modelo = COALESCE($3, modelo), cantidad = COALESCE($4, cantidad), num_serie = COALESCE($5, num_serie),
+  //      id_plantel = COALESCE($6, id_plantel), id_departamento = COALESCE($7, id_departamento), actualizacion = NOW()
+  //      WHERE id_productos = $8 RETURNING *`,
+  //     [nombre || null, descripcion || null, modelo || null, cantidad ? parseInt(cantidad) : null,
+  //     num_serie || null, id_plantel ? parseInt(id_plantel) : null, id_departamento ? parseInt(id_departamento) : null, id_productos]
+  //   );
+  //   if (result.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
+  //   return res.status(200).json({ mensaje: "Producto actualizado correctamente", producto: result.rows[0] });
+  // } catch (err) {
+  //   return errorRes(res, 500, "Error al editar el producto", err.message);
+  // }
 });
 
 router.delete("/api/productos/eliminar", async (req, res) => {
-  const { id_productos } = req.body;
-  if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
-  try {
-    const result = await db.query("DELETE FROM productos WHERE id_productos = $1 RETURNING *", [id_productos]);
-    if (result.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
-    return res.status(200).json({ mensaje: "Producto eliminado correctamente", producto: result.rows[0] });
-  } catch (err) {
-    return errorRes(res, 500, "Error al eliminar el producto", err.message);
+  try{
+    const deletedProducto = await deleteProducto(req.body.id_producto);
+    return res.status(200).json({mensaje: "Producto eliminado correctamente.", producto: deletedProducto});
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."});
   }
+  // const { id_productos } = req.body;
+  // if (!id_productos || !esEnteroPositivo(id_productos)) return errorRes(res, 400, "id_productos es requerido y debe ser un entero positivo");
+  // try {
+  //   const result = await db.query("DELETE FROM productos WHERE id_productos = $1 RETURNING *", [id_productos]);
+  //   if (result.rows.length === 0) return errorRes(res, 404, "Producto no encontrado");
+  //   return res.status(200).json({ mensaje: "Producto eliminado correctamente", producto: result.rows[0] });
+  // } catch (err) {
+  //   return errorRes(res, 500, "Error al eliminar el producto", err.message);
+  // }
 });
 
 router.post("/api/productos/buscar", async (req, res) => {

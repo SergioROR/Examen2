@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS productos (
     creado_el TIMESTAMP NOT NULL DEFAULT NOW(),
     actualizado_el TIMESTAMP NULL,
     id_departamento BIGINT NOT NULL REFERENCES departamentos(id_departamento)
+    esta_activo BOOLEAN NOT NULL DEFAULT true
 );
 
 -- Product - Plantel index
