@@ -79,7 +79,7 @@ export class GeneralComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     const sesion = this.deptSvc.getUsuarioSesion();
     this.rol = sesion?.rol ?? '';
-    this.plantel = sesion?.plantel ?? 0;
+    this.plantel = sesion?.id_plantel ?? 0;
     this.idUsuario = sesion?.id_usuario ?? 0;
     this.nombre = sesion?.nombre ?? '';
     this.cargarDatos();

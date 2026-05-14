@@ -50,7 +50,7 @@ export class AdminPedidosComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const sesion = this.deptSvc.getUsuarioSesion();
     this.idAdmin = sesion?.id_usuario ?? 0;
-    this.idPlantelAdmin = sesion?.plantel ?? 0;
+    this.idPlantelAdmin = sesion?.id_plantel ?? 0;
     console.log('sesion:', sesion);
     console.log('idAdmin:', this.idAdmin);
     console.log('idPlantelAdmin:', this.idPlantelAdmin); // 👈 necesito ver este valor

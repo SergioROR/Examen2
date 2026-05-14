@@ -16,6 +16,6 @@ export interface Departamento {
 export interface UsuarioSesion {
   id_usuario: number;  // agregado
   nombre:     string;
-  plantel:    number;
+  id_plantel:    number;
   rol:        string;
 }

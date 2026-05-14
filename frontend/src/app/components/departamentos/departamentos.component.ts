@@ -44,7 +44,7 @@ export class DepartamentosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const sesion   = this.deptSvc.getUsuarioSesion();
-    this.plantel   = sesion?.plantel    ?? 0;
+    this.plantel   = sesion?.id_plantel ?? 0;
     this.idUsuario = sesion?.id_usuario ?? 0;
     this.cargarDepartamentos();
   }

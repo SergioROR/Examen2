@@ -62,7 +62,7 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const sesion = this.deptSvc.getUsuarioSesion();
-    this.plantelUsuario = sesion?.plantel ?? 0;
+    this.plantelUsuario = sesion?.id_plantel ?? 0;
     this.idUsuario = sesion?.id_usuario ?? 0;
     this.cargarPedidos();
     this.cargarCatalogo();

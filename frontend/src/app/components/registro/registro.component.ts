@@ -48,7 +48,7 @@ export class RegistrosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const sesion = this.deptSvc.getUsuarioSesion();
-    this.plantelUsuario = sesion?.plantel ?? 0;
+    this.plantelUsuario = sesion?.id_plantel ?? 0;
     this.cargar();
   }
 

@@ -11,6 +11,8 @@ const rateLimit = require("express-rate-limit");
 const { logUsuarioIn, postUsuario, getUsuarios, updateUsuario, updateContraseña, toggleUsuarioEstado, updateImagen, getImagen } = require("../service/usuarioService/service");
 const { postPlantel, getPlanteles, getDetallePlantel, updatePlantelPrincipal, getProductosFromPlantelPrincipal } = require("../service/plantelService/service");
 const { getProductos, getProducto, postProducto, putProductoCantidad } = require("../service/productoService/service");
+const { getDepartamentos, getDepartamentosByPlantelId, postDepartamento, postDepartamentoByUsuario } = require("../service/departamentoService/service");
+
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -344,66 +346,40 @@ router.post("/api/productos/buscar", async (req, res) => {
 
 // ── DEPARTAMENTOS ────────────────────────────────────────────
 router.post("/api/departamentos", async (req, res) => {
-  const { nombre, descripcion, id_plantel } = req.body;
-  if (!nombre || !descripcion || !id_plantel) return res.status(400).json({ mensaje: "Faltan campos requeridos" });
   try {
-    const result = await db.query(
-      `INSERT INTO departamento (nombre, descripcion, id_plantel) VALUES ($1,$2,$3) RETURNING *`,
-      [nombre, descripcion, parseInt(id_plantel)]
-    );
-    res.status(201).json({ mensaje: "Departamento creado correctamente", departamento: result.rows[0] });
+    const result = await postDepartamento(req.body);
+    return res.status(201).json({ mensaje: "Departamento creado correctamente", departamento: result });
   } catch (error) {
-    res.status(500).json({ mensaje: "Error al crear departamento" });
+    return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 });
 
 // ── POST /api/departamentos/usuario ─────────────────────────
-// Crea departamento en el plantel del usuario en sesión
 router.post("/api/departamentos/usuario", async (req, res) => {
-  const { nombre, descripcion, id_plantel } = req.body;
-  if (!nombre || !descripcion || !id_plantel) {
-    return res.status(400).json({ mensaje: "Faltan campos requeridos" });
-  }
   try {
-    // Verificar que no exista ya ese nombre en el mismo plantel
-    const existe = await db.query(
-      `SELECT id_departamento FROM departamento
-       WHERE LOWER(nombre) = LOWER($1) AND id_plantel = $2`,
-      [nombre, parseInt(id_plantel)]
-    );
-    if (existe.rows.length > 0) {
-      return res.status(400).json({ mensaje: "Ya existe un departamento con ese nombre en este plantel" });
-    }
-    const result = await db.query(
-      `INSERT INTO departamento (nombre, descripcion, id_plantel)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [nombre, descripcion, parseInt(id_plantel)]
-    );
-    res.status(201).json({ mensaje: "Departamento creado correctamente", departamento: result.rows[0] });
+    const result = await postDepartamentoByUsuario(req.body);
+    return res.status(201).json({ mensaje: "Departamento creado correctamente", departamento: result });
   } catch (error) {
-    console.error("Error al crear departamento:", error);
-    res.status(500).json({ mensaje: "Error al crear departamento" });
+    return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 });
 
+
 router.get("/api/departamentos", async (req, res) => {
   try {
-    const result = await db.query("SELECT id_departamento, nombre, descripcion, id_plantel FROM departamento ORDER BY nombre");
-    return res.status(200).json(result.rows);
+    const result = await getDepartamentos();
+    return res.status(200).json(result);
   } catch (error) {
-    return res.status(500).json({ mensaje: "Error al consultar los departamentos" });
+    return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 });
 
 router.get("/api/departamentos/:id_plantel", async (req, res) => {
   try {
-    const result = await db.query(
-      "SELECT id_departamento, nombre, descripcion, id_plantel FROM departamento WHERE id_plantel = $1 ORDER BY nombre",
-      [parseInt(req.params.id_plantel)]
-    );
-    return res.status(200).json(result.rows);
+    const result = await getDepartamentosByPlantelId(req.params.id_plantel);
+    return res.status(200).json(result);
   } catch (error) {
-    return res.status(500).json({ mensaje: "Error al consultar los departamentos" });
+    return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 });
 
