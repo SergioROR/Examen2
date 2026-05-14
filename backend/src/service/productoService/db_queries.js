@@ -15,6 +15,21 @@ async function getProductosByPlantelId(id_plantel){
     }
 }
 
+async function lookForProductos(search){
+    try{
+        const result = await db.query(
+            `SELECT * FROM vista_departamento_productos
+            WHERE nombre ILIKE $1 OR modelo ILIKE $1 OR num_serie ILIKE $1
+            ORDER BY nombre ASC`,
+            [`%${search}%`]
+        );
+        return result.rowCount > 0 ? result.rows : null;
+    }catch(err){
+        console.error(`Error en la base de datos al obtener productos relacionados con el criterio de búsqueda: ${err}.`);
+        throw new ErrorImpl("Error al realizar la consulta de los productos.", 500);
+    }   
+}
+
 async function getAllProductos(){
     try{
         const result = await db.query(
@@ -151,5 +166,6 @@ module.exports = {
     updateProductoCantidad,
     updateProducto,
     softDeleteProducto,
+    lookForProductos,
 
 }

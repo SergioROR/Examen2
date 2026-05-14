@@ -10,7 +10,7 @@ const fs = require('fs');
 const rateLimit = require("express-rate-limit");
 const { logUsuarioIn, postUsuario, getUsuarios, updateUsuario, updateContraseña, toggleUsuarioEstado, updateImagen, getImagen } = require("../service/usuarioService/service");
 const { postPlantel, getPlanteles, getDetallePlantel, updatePlantelPrincipal, getProductosFromPlantelPrincipal } = require("../service/plantelService/service");
-const { getProductos, getProducto, postProducto, putProductoCantidad, putProducto, deleteProducto } = require("../service/productoService/service");
+const { getProductos, getProducto, postProducto, putProductoCantidad, putProducto, deleteProducto, findProductos } = require("../service/productoService/service");
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -334,24 +334,31 @@ router.delete("/api/productos/eliminar", async (req, res) => {
 });
 
 router.post("/api/productos/buscar", async (req, res) => {
-  const { q } = req.body;
-  if (!q || q.trim().length < 2) return errorRes(res, 400, "El término de búsqueda debe tener al menos 2 caracteres");
-  try {
-    const result = await db.query(
-      `SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo, pr.cantidad, pr.num_serie,
-              p.nombre AS plantel, d.nombre AS departamento
-       FROM productos pr
-       INNER JOIN planteles p ON pr.id_plantel = p.id_plantel
-       INNER JOIN departamento d ON pr.id_departamento = d.id_departamento
-       WHERE pr.nombre ILIKE $1 OR pr.modelo ILIKE $1 OR pr.num_serie ILIKE $1
-       ORDER BY pr.nombre ASC`,
-      [`%${q.trim()}%`]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ mensaje: "No se encontraron productos con ese criterio" });
-    return res.status(200).json(result.rows);
-  } catch (err) {
-    return errorRes(res, 500, "Error al buscar productos", err.message);
+  try{
+    const q = req.body.q;
+    const productos = await findProductos(q); 
+    return res.status(200).json(productos);
+  }catch(err){
+    return res.status(err?.statusCode || 500).json({verificacion: false, mensaje: err?.message || "Error interno del servidor."});
   }
+  // const { q } = req.body;
+  // if (!q || q.trim().length < 2) return errorRes(res, 400, "El término de búsqueda debe tener al menos 2 caracteres");
+  // try {
+  //   const result = await db.query(
+  //     `SELECT pr.id_productos, pr.nombre, pr.descripcion, pr.modelo, pr.cantidad, pr.num_serie,
+  //             p.nombre AS plantel, d.nombre AS departamento
+  //      FROM productos pr
+  //      INNER JOIN planteles p ON pr.id_plantel = p.id_plantel
+  //      INNER JOIN departamento d ON pr.id_departamento = d.id_departamento
+  //      WHERE pr.nombre ILIKE $1 OR pr.modelo ILIKE $1 OR pr.num_serie ILIKE $1
+  //      ORDER BY pr.nombre ASC`,
+  //     [`%${q.trim()}%`]
+  //   );
+  //   if (result.rows.length === 0) return res.status(404).json({ mensaje: "No se encontraron productos con ese criterio" });
+  //   return res.status(200).json(result.rows);
+  // } catch (err) {
+  //   return errorRes(res, 500, "Error al buscar productos", err.message);
+  // }
 });
 
 // ── DEPARTAMENTOS ────────────────────────────────────────────

@@ -1,7 +1,7 @@
 const Producto = require("../../model/productos");
 const ErrorImpl = require("../../utils/errorImpl");
 const { isAnIntegerNumber } = require("../../utils/quantity_validators");
-const { getAllProductos, getProductoById, addProducto, updateProductoCantidad, updateProducto, softDeleteProducto } = require("./db_queries");
+const { getAllProductos, getProductoById, addProducto, updateProductoCantidad, updateProducto, softDeleteProducto, lookForProductos } = require("./db_queries");
 
 async function getProductos() {
     try{
@@ -117,6 +117,21 @@ async function deleteProducto(id_producto){
     }
 }
 
+async function findProductos(q){
+    try{
+        const search = q?.trim();
+        if (!search || search.length < 2)
+            throw new ErrorImpl("El término de búsqueda debe tener al menos dos caracteres.", 400);
+        const result = await lookForProductos(search);
+        if (!result)
+            throw new ErrorImpl("No se encontraron productos relacionados con ese criterio.", 404);
+        const productos = result.map((i) => new Producto(i));
+        return productos;
+    }catch(err){
+        console.error(`Error al encontrar productos relacionados con el criterio de búsqueda: ${err}.`);
+        throw err;
+    }
+}
 
 module.exports = {
     getProductos,
@@ -125,4 +140,5 @@ module.exports = {
     putProductoCantidad,
     putProducto,
     deleteProducto,
+    findProductos,
 }
